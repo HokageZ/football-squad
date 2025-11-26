@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useTransition,
   ReactNode,
 } from 'react';
 import { Player, PlayerStats, PlayerPosition, DEFAULT_STATS } from '@/lib/types';
@@ -28,6 +29,7 @@ const PlayerContext = createContext<PlayerContextType | null>(null);
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [, startTransition] = useTransition();
 
   // Load players from localStorage on mount and migrate data if needed
   useEffect(() => {
@@ -94,7 +96,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   );
 
   const deletePlayer = useCallback((id: string): void => {
-    setPlayers((prev) => prev.filter((player) => player.id !== id));
+    // Use startTransition for non-blocking UI updates
+    startTransition(() => {
+      setPlayers((prev) => prev.filter((player) => player.id !== id));
+    });
   }, []);
 
   const getPlayer = useCallback(

@@ -70,9 +70,9 @@ export default function PlayersPage() {
   };
 
   const handleDeletePlayer = (id: string) => {
-    if (confirm('Are you sure you want to delete this player?')) {
-      deletePlayer(id);
-    }
+    // Remove blocking confirm() - it kills INP scores
+    // Delete immediately for snappy UX
+    deletePlayer(id);
   };
 
   if (isLoading) {

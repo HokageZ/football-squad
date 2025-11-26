@@ -19,11 +19,14 @@ export function getStoredPlayers(): Player[] {
 export function setStoredPlayers(players: Player[]): void {
   if (typeof window === 'undefined') return;
   
-  try {
-    localStorage.setItem(PLAYERS_KEY, JSON.stringify(players));
-  } catch (error) {
-    console.error('Failed to save players:', error);
-  }
+  // Defer localStorage write to not block the main thread
+  requestAnimationFrame(() => {
+    try {
+      localStorage.setItem(PLAYERS_KEY, JSON.stringify(players));
+    } catch (error) {
+      console.error('Failed to save players:', error);
+    }
+  });
 }
 
 export function getStoredMatches(): Match[] {
@@ -40,11 +43,14 @@ export function getStoredMatches(): Match[] {
 export function setStoredMatches(matches: Match[]): void {
   if (typeof window === 'undefined') return;
   
-  try {
-    localStorage.setItem(MATCHES_KEY, JSON.stringify(matches));
-  } catch (error) {
-    console.error('Failed to save matches:', error);
-  }
+  // Defer localStorage write to not block the main thread
+  requestAnimationFrame(() => {
+    try {
+      localStorage.setItem(MATCHES_KEY, JSON.stringify(matches));
+    } catch (error) {
+      console.error('Failed to save matches:', error);
+    }
+  });
 }
 
 export function generateId(): string {
