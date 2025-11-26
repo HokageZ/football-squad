@@ -175,11 +175,11 @@ export default function PlayersPage() {
 
       {/* Edit Player Sheet */}
       <Sheet open={!!editingPlayer} onOpenChange={() => setEditingPlayer(null)}>
-        <SheetContent className="overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Edit Player</SheetTitle>
+        <SheetContent className="overflow-y-auto sm:max-w-md w-full bg-black/95 border-l border-white/10 backdrop-blur-xl p-0">
+          <SheetHeader className="p-6 pb-2 border-b border-white/10 bg-black/40 sticky top-0 z-10 backdrop-blur-md">
+            <SheetTitle className="text-xl font-black tracking-tight">EDIT PLAYER</SheetTitle>
           </SheetHeader>
-          <div className="mt-6">
+          <div className="p-6">
             {editingPlayer && (
               <PlayerForm
                 player={editingPlayer}

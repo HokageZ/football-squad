@@ -2,10 +2,15 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, Zap, Target, Sparkles, Shield, Dumbbell, ArrowRight } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Player, POSITION_COLORS } from '@/lib/types';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card';
+import { Player, POSITION_COLORS, STAT_LABELS, STAT_COLORS, STAT_KEYS } from '@/lib/types';
 import { calculateOverall } from '@/lib/team-balancer';
 
 interface DraggablePlayerProps {
@@ -32,6 +37,56 @@ export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain }:
 
   const overall = calculateOverall(player.stats);
 
+  // Get player's top stats and strengths
+  const getPlayerStrengths = () => {
+    if (player.isUnknown) return [];
+    
+    const stats = player.stats;
+    const strengths: { label: string; value: number; icon: string }[] = [];
+    
+    // Find top 2 stats
+    const sortedStats = STAT_KEYS
+      .map(key => ({ key, value: stats[key] }))
+      .sort((a, b) => b.value - a.value);
+    
+    const topStats = sortedStats.slice(0, 2);
+    
+    topStats.forEach(({ key, value }) => {
+      if (value >= 70) {
+        const labels: Record<string, string> = {
+          pace: '⚡ Speed Demon',
+          shooting: '🎯 Sharpshooter',
+          dribbling: '✨ Skillful',
+          passing: '🎯 Playmaker',
+          defending: '🛡️ Solid Defender',
+          physical: '💪 Tank',
+        };
+        strengths.push({ label: labels[key] || key, value, icon: key });
+      }
+    });
+    
+    return strengths;
+  };
+
+  const getSuggestedRole = () => {
+    if (player.isUnknown) return 'Unknown potential';
+    if (player.position) return null; // Already has a position
+    
+    const { pace, shooting, dribbling, passing, defending, physical } = player.stats;
+    
+    if (defending >= 75 && physical >= 70) return 'Natural Defender';
+    if (pace >= 80 && shooting >= 75) return 'Goal Threat';
+    if (passing >= 80 && dribbling >= 75) return 'Creative Midfielder';
+    if (pace >= 85) return 'Winger Material';
+    if (physical >= 80 && defending >= 70) return 'Defensive Midfielder';
+    if (shooting >= 80) return 'Striker Instinct';
+    
+    return null;
+  };
+
+  const strengths = getPlayerStrengths();
+  const suggestedRole = getSuggestedRole();
+
   const getOverallColor = (rating: number) => {
     if (player.isUnknown) return 'text-muted-foreground border-white/10';
     if (rating >= 90) return 'text-yellow-500 border-yellow-500/30 bg-yellow-500/5';
@@ -40,7 +95,7 @@ export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain }:
     return 'text-slate-400 border-slate-500/30 bg-slate-500/5';
   };
 
-  return (
+  const playerCard = (
     <div
       ref={setNodeRef}
       style={style}
@@ -117,5 +172,108 @@ export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain }:
         </Badge>
       </div>
     </div>
+  );
+
+  // Don't show hover card while dragging
+  if (isDragging) {
+    return playerCard;
+  }
+
+  return (
+    <HoverCard openDelay={300} closeDelay={100}>
+      <HoverCardTrigger asChild>
+        {playerCard}
+      </HoverCardTrigger>
+      <HoverCardContent 
+        className="w-64 p-0 bg-black/95 border-white/10 backdrop-blur-xl"
+        side="right"
+        sideOffset={8}
+      >
+        {/* Header */}
+        <div className="p-3 border-b border-white/10 flex items-center gap-3">
+          <Avatar className="h-12 w-12 border-2 border-white/10">
+            <AvatarImage src={player.image} alt={player.name} />
+            <AvatarFallback className="bg-white/5 text-lg font-bold">
+              {player.isUnknown ? '?' : player.name.substring(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h4 className="font-black text-sm">{player.name}</h4>
+            <div className="flex items-center gap-2 mt-0.5">
+              {player.position && (
+                <span 
+                  className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                  style={{ 
+                    color: POSITION_COLORS[player.position],
+                    backgroundColor: `${POSITION_COLORS[player.position]}20`
+                  }}
+                >
+                  {player.position}
+                </span>
+              )}
+              <span className={`text-lg font-black ${getOverallColor(overall).split(' ')[0]}`}>
+                {player.isUnknown ? '??' : overall}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        {!player.isUnknown && (
+          <div className="p-3 space-y-3">
+            <div className="grid grid-cols-3 gap-2">
+              {STAT_KEYS.map((key) => (
+                <div key={key} className="text-center">
+                  <div 
+                    className="text-lg font-black"
+                    style={{ color: player.stats[key] >= 75 ? STAT_COLORS[key] : undefined }}
+                  >
+                    {player.stats[key]}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground font-bold uppercase">
+                    {STAT_LABELS[key]}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Strengths */}
+            {strengths.length > 0 && (
+              <div className="pt-2 border-t border-white/10">
+                <p className="text-[10px] text-muted-foreground uppercase font-bold mb-2">Strengths</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {strengths.map((s, i) => (
+                    <span 
+                      key={i}
+                      className="text-[10px] font-bold px-2 py-1 rounded-full bg-primary/10 text-primary"
+                    >
+                      {s.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Suggested Role */}
+            {suggestedRole && (
+              <div className="flex items-center gap-2 pt-2 border-t border-white/10">
+                <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  Suggested: <span className="text-primary font-bold">{suggestedRole}</span>
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Unknown player message */}
+        {player.isUnknown && (
+          <div className="p-4 text-center text-muted-foreground">
+            <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-30" />
+            <p className="text-xs">Stats hidden - Scouting in progress</p>
+          </div>
+        )}
+      </HoverCardContent>
+    </HoverCard>
   );
 }

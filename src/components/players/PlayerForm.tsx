@@ -77,32 +77,33 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
   const overall = calculateOverall(stats);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-8">
       {/* Avatar Section */}
-      <div className="flex flex-col items-center gap-4">
-        <div className="relative">
-          <Avatar className={`h-24 w-24 border-4 ${isUnknown ? 'border-white/10 opacity-50' : 'border-primary/30'}`}>
-            <AvatarImage src={image} alt={name || 'Player'} />
-            <AvatarFallback className="bg-gradient-to-br from-white/10 to-black/20 text-2xl font-bold">
-              {isUnknown ? '?' : (name ? name.substring(0, 2).toUpperCase() : <User className="h-10 w-10" />)}
+      <div className="flex flex-col items-center gap-6">
+        <div className="relative group">
+          <div className={`absolute inset-0 rounded-full blur-xl bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity`} />
+          <Avatar className={`h-32 w-32 border-4 shadow-2xl transition-all duration-300 ${isUnknown ? 'border-white/10 opacity-50' : 'border-primary/30 group-hover:border-primary/50'}`}>
+            <AvatarImage src={image} alt={name || 'Player'} className="object-cover" />
+            <AvatarFallback className="bg-gradient-to-br from-white/10 to-black/20 text-4xl font-black">
+              {isUnknown ? '?' : (name ? name.substring(0, 2).toUpperCase() : <User className="h-12 w-12" />)}
             </AvatarFallback>
           </Avatar>
           {image && (
             <button
               type="button"
               onClick={() => setImage('')}
-              className="absolute -top-1 -right-1 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
+              className="absolute top-0 right-0 p-1.5 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-all shadow-lg hover:scale-110"
             >
-              <X className="h-3 w-3" />
+              <X className="h-4 w-4" />
             </button>
           )}
         </div>
         <div>
           <Label
             htmlFor="image-upload"
-            className="cursor-pointer inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-all hover:scale-105 font-bold text-xs uppercase tracking-wider"
           >
-            <Upload className="h-4 w-4" />
+            <Upload className="h-3.5 w-3.5" />
             {image ? 'Change Photo' : 'Upload Photo'}
           </Label>
           <Input
@@ -115,107 +116,121 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
         </div>
       </div>
 
-      {/* Name Input */}
-      <div className="space-y-2">
-        <Label htmlFor="name">Player Name</Label>
-        <Input
-          id="name"
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-            if (errors.name) setErrors({});
-          }}
-          placeholder="Enter player name"
-          className={errors.name ? 'border-destructive' : ''}
-        />
-        {errors.name && (
-          <p className="text-sm text-destructive">{errors.name}</p>
+      <div className="space-y-6">
+        {/* Name Input */}
+        <div className="space-y-2">
+          <Label htmlFor="name" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Player Name</Label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (errors.name) setErrors({});
+            }}
+            placeholder="Enter player name"
+            className={`bg-white/5 border-white/10 h-12 text-lg font-bold ${errors.name ? 'border-destructive focus-visible:ring-destructive' : 'focus-visible:ring-primary'}`}
+          />
+          {errors.name && (
+            <p className="text-xs font-bold text-destructive mt-1">{errors.name}</p>
+          )}
+        </div>
+
+        {/* Position Selection */}
+        <div className="space-y-3">
+          <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Position</Label>
+          <div className="grid grid-cols-4 gap-2">
+            {POSITIONS.map((pos) => (
+              <button
+                key={pos}
+                type="button"
+                onClick={() => setPosition(position === pos ? undefined : pos)}
+                className={`
+                  relative overflow-hidden p-3 rounded-xl border-2 transition-all duration-200 group
+                  ${position === pos 
+                    ? 'border-current bg-current/10 shadow-[0_0_15px_-5px_currentColor]' 
+                    : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10'
+                  }
+                `}
+                style={{ 
+                  color: position === pos ? POSITION_COLORS[pos] : undefined,
+                  borderColor: position === pos ? POSITION_COLORS[pos] : undefined
+                }}
+              >
+                <div className="relative z-10 text-center">
+                  <span className="block text-lg font-black tracking-tight">{pos}</span>
+                  <span className="block text-[9px] font-bold uppercase tracking-wider opacity-60 mt-0.5">
+                    {POSITION_LABELS[pos]}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Unknown Stats Toggle */}
+        <div className="flex items-center justify-between p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/[0.07] transition-colors">
+          <div className="space-y-1">
+            <Label className="text-sm font-bold flex items-center gap-2">
+              {isUnknown ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-primary" />}
+              Scouting Mode
+            </Label>
+            <p className="text-xs text-muted-foreground font-medium">
+              Hide stats until fully scouted
+            </p>
+          </div>
+          <Switch
+            checked={isUnknown}
+            onCheckedChange={setIsUnknown}
+            className="data-[state=checked]:bg-primary"
+          />
+        </div>
+
+        {!isUnknown && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-300 pt-2">
+            {/* Overall Display */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/5 to-black border border-white/10 p-6 text-center group">
+              <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-5 mix-blend-overlay" />
+              <div className="relative z-10">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Overall Rating</p>
+                <span className={`text-6xl font-black tracking-tighter transition-all duration-300 ${
+                  overall >= 90 ? 'text-yellow-500 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]' :
+                  overall >= 80 ? 'text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]' :
+                  overall >= 70 ? 'text-blue-500 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]' :
+                  'text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                }`}>
+                  {overall}
+                </span>
+              </div>
+            </div>
+
+            {/* Stats Sliders */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Attributes</Label>
+                <span className="text-[10px] font-bold text-muted-foreground bg-white/5 px-2 py-1 rounded">1-99</span>
+              </div>
+              <div className="grid gap-8 bg-white/5 p-6 rounded-2xl border border-white/10">
+                {STAT_KEYS.map((key) => (
+                  <StatSlider
+                    key={key}
+                    statKey={key}
+                    label={STAT_LABELS[key]}
+                    value={stats[key]}
+                    onChange={(value) => handleStatChange(key, value)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Position Selection */}
-      <div className="space-y-2">
-        <Label>Position</Label>
-        <div className="grid grid-cols-4 gap-2">
-          {POSITIONS.map((pos) => (
-            <button
-              key={pos}
-              type="button"
-              onClick={() => setPosition(position === pos ? undefined : pos)}
-              className={`
-                p-3 rounded-lg border-2 font-bold text-sm transition-all
-                ${position === pos 
-                  ? 'border-current bg-current/10' 
-                  : 'border-white/10 bg-white/5 hover:bg-white/10'
-                }
-              `}
-              style={{ 
-                color: position === pos ? POSITION_COLORS[pos] : undefined,
-                borderColor: position === pos ? POSITION_COLORS[pos] : undefined
-              }}
-            >
-              <div className="text-center">
-                <span className="block text-lg">{pos}</span>
-                <span className="block text-[10px] text-muted-foreground mt-0.5">
-                  {POSITION_LABELS[pos]}
-                </span>
-              </div>
-            </button>
-          ))}
-        </div>
-        <p className="text-xs text-muted-foreground">Optional - helps with team balancing</p>
-      </div>
-
-      {/* Unknown Stats Toggle */}
-      <div className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5">
-        <div className="space-y-0.5">
-          <Label className="text-base font-medium">Scouting In Progress</Label>
-          <p className="text-xs text-muted-foreground">
-            Mark stats as unknown/hidden
-          </p>
-        </div>
-        <Switch
-          checked={isUnknown}
-          onCheckedChange={setIsUnknown}
-        />
-      </div>
-
-      {!isUnknown && (
-        <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
-          {/* Overall Display */}
-          <div className="flex items-center justify-center py-4 bg-white/5 rounded-lg border border-white/10">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-1 font-bold uppercase tracking-wider">Overall Rating</p>
-              <span className="text-5xl font-black text-primary drop-shadow-[0_0_10px_rgba(var(--primary),0.5)]">
-                {overall}
-              </span>
-            </div>
-          </div>
-
-          {/* Stats Sliders */}
-          <div className="space-y-6">
-            <Label className="text-base font-bold uppercase tracking-wide text-muted-foreground">Player Stats (1-99)</Label>
-            <div className="grid gap-6">
-              {STAT_KEYS.map((key) => (
-                <StatSlider
-                  key={key}
-                  statKey={key}
-                  label={STAT_LABELS[key]}
-                  value={stats[key]}
-                  onChange={(value) => handleStatChange(key, value)}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Actions */}
-      <div className="flex gap-3 pt-4">
-        <Button type="button" variant="ghost" onClick={onCancel} className="flex-1">
+      <div className="flex gap-3 pt-4 sticky bottom-0 bg-black/80 backdrop-blur-xl p-4 -mx-6 -mb-6 border-t border-white/10">
+        <Button type="button" variant="ghost" onClick={onCancel} className="flex-1 h-12 font-bold hover:bg-white/10">
           Cancel
         </Button>
-        <Button type="submit" className="flex-1 font-bold">
+        <Button type="submit" className="flex-1 h-12 font-bold text-base shadow-lg shadow-primary/20">
           {player ? 'Save Changes' : 'Add Player'}
         </Button>
       </div>
