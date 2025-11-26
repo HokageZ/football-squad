@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { PlayerProvider } from "@/context/PlayerContext";
+import { MatchProvider } from "@/context/MatchContext";
 import { Header } from "@/components/layout/Header";
 import "./globals.css";
 
@@ -27,11 +28,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen overflow-x-hidden`}
       >
         <PlayerProvider>
-          <Header />
-          <main className="container py-6">{children}</main>
+          <MatchProvider>
+            <Header />
+            <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">{children}</main>
+          </MatchProvider>
         </PlayerProvider>
       </body>
     </html>

@@ -19,7 +19,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { usePlayers } from '@/context/PlayerContext';
-import { Player, PlayerStats } from '@/lib/types';
+import { Player, PlayerStats, PlayerPosition } from '@/lib/types';
 import { PlayerCard } from '@/components/players/PlayerCard';
 import { PlayerForm } from '@/components/players/PlayerForm';
 
@@ -39,8 +39,10 @@ export default function PlayersPage() {
     name: string;
     stats: PlayerStats;
     image?: string;
+    isUnknown?: boolean;
+    position?: PlayerPosition;
   }) => {
-    addPlayer(data.name, data.stats, data.image);
+    addPlayer(data.name, data.stats, data.image, data.isUnknown, data.position);
     setIsAddDialogOpen(false);
   };
 
@@ -48,6 +50,8 @@ export default function PlayersPage() {
     name: string;
     stats: PlayerStats;
     image?: string;
+    isUnknown?: boolean;
+    position?: PlayerPosition;
   }) => {
     if (editingPlayer) {
       updatePlayer(editingPlayer.id, data);

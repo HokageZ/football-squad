@@ -1,8 +1,9 @@
 'use client';
 
-import { Player } from './types';
+import { Match, Player } from './types';
 
 const PLAYERS_KEY = 'football_squad_players';
+const MATCHES_KEY = 'football_squad_matches';
 
 export function getStoredPlayers(): Player[] {
   if (typeof window === 'undefined') return [];
@@ -22,6 +23,27 @@ export function setStoredPlayers(players: Player[]): void {
     localStorage.setItem(PLAYERS_KEY, JSON.stringify(players));
   } catch (error) {
     console.error('Failed to save players:', error);
+  }
+}
+
+export function getStoredMatches(): Match[] {
+  if (typeof window === 'undefined') return [];
+  
+  try {
+    const data = localStorage.getItem(MATCHES_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function setStoredMatches(matches: Match[]): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.setItem(MATCHES_KEY, JSON.stringify(matches));
+  } catch (error) {
+    console.error('Failed to save matches:', error);
   }
 }
 

@@ -19,8 +19,8 @@ export function StatSlider({
   value,
   onChange,
   min = 1,
-  max = 10,
-  step = 0.5,
+  max = 99,
+  step = 1,
 }: StatSliderProps) {
   const color = STAT_COLORS[statKey];
 
