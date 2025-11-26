@@ -39,6 +39,7 @@ import { usePlayers } from '@/context/PlayerContext';
 import { useMatches } from '@/context/MatchContext';
 import { Player, Team } from '@/lib/types';
 import { balanceTeams, randomizeTeams, calculateTeamOverall } from '@/lib/team-balancer';
+import { getStoredTeams, setStoredTeams, getStoredUnassigned, setStoredUnassigned } from '@/lib/storage';
 import { PitchView } from './PitchView';
 import { DraggablePlayer } from './DraggablePlayer';
 
@@ -61,15 +62,63 @@ export function TeamBuilder() {
     })
   );
 
-  // Initialize with balanced teams
+  // Initialize teams - restore from storage or balance
   useEffect(() => {
-    if (players.length > 0 && teams.length === 0) {
-      handleBalanceTeams();
-    } else if (players.length === 0) {
+    if (players.length === 0) {
       setTeams([]);
       setUnassignedPlayers([]);
+      return;
     }
-  }, [players]);
+
+    const storedTeams = getStoredTeams();
+    const storedUnassignedIds = getStoredUnassigned();
+    
+    // If we have stored teams, restore them
+    if (storedTeams.length > 0) {
+      // Get all player IDs currently in the roster
+      const currentPlayerIds = new Set(players.map(p => p.id));
+      
+      // Rebuild teams with only existing players (updates player data)
+      const restoredTeams = storedTeams.map(team => ({
+        ...team,
+        players: team.players
+          .filter(p => currentPlayerIds.has(p.id))
+          .map(p => players.find(player => player.id === p.id)!)
+      }));
+      
+      // Get IDs of players already in teams
+      const assignedIds = new Set(restoredTeams.flatMap(t => t.players.map(p => p.id)));
+      
+      // Unassigned = stored unassigned (if still exist) + any new players
+      const unassigned = players.filter(p => 
+        !assignedIds.has(p.id) && 
+        (storedUnassignedIds.includes(p.id) || !storedUnassignedIds.length || !assignedIds.size)
+      );
+      
+      // Also add any new players not in stored data
+      const newPlayers = players.filter(p => 
+        !assignedIds.has(p.id) && !storedUnassignedIds.includes(p.id)
+      );
+      
+      setTeams(restoredTeams);
+      setUnassignedPlayers([...unassigned, ...newPlayers]);
+    } else {
+      // No stored teams - initialize with balanced teams
+      handleBalanceTeams();
+    }
+  }, [players.length]); // Only run when player count changes
+
+  // Persist teams whenever they change
+  useEffect(() => {
+    if (teams.length > 0) {
+      setStoredTeams(teams);
+    }
+  }, [teams]);
+
+  // Persist unassigned players whenever they change
+  useEffect(() => {
+    setStoredUnassigned(unassignedPlayers.map(p => p.id));
+  }, [unassignedPlayers]);
 
   const handleBalanceTeams = useCallback(() => {
     const balanced = balanceTeams(players, 2);
