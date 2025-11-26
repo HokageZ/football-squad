@@ -55,7 +55,7 @@ export function StatBar({
           style={{ backgroundColor: color }}
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
         />
       </div>
     </div>

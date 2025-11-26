@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Users, Grid, List } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Plus, Search, Users, Grid, List, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -22,6 +22,16 @@ import { usePlayers } from '@/context/PlayerContext';
 import { Player, PlayerStats, PlayerPosition } from '@/lib/types';
 import { PlayerCard } from '@/components/players/PlayerCard';
 import { PlayerForm } from '@/components/players/PlayerForm';
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.02,
+    },
+  },
+};
 
 export default function PlayersPage() {
   const { players, isLoading, addPlayer, updatePlayer, deletePlayer } =
@@ -74,44 +84,60 @@ export default function PlayersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Players</h1>
-          <p className="text-muted-foreground">
-            Manage your squad of {players.length} players
+    <div className="space-y-8 pb-10">
+      {/* Header Section */}
+      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+        <div
+          className="space-y-2"
+        >
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight">
+            SQUAD <span className="text-primary">ROSTER</span>
+          </h1>
+          <p className="text-muted-foreground font-medium max-w-md">
+            Manage your elite athletes, track their development, and scout for new talent.
           </p>
         </div>
-        <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add Player
-        </Button>
+
+        <div>
+          <Button
+            onClick={() => setIsAddDialogOpen(true)}
+            size="lg"
+            className="rounded-full font-bold shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:shadow-[0_0_30px_rgba(var(--primary),0.5)] transition-all"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            Recruit Player
+          </Button>
+        </div>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      {/* Controls Bar */}
+      <div
+        className="sticky top-20 z-30 p-2 rounded-2xl bg-black/40 backdrop-blur-xl border border-white/10 shadow-xl flex flex-col sm:flex-row gap-2"
+      >
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search players..."
+            placeholder="Search by name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-10 h-12 bg-white/5 border-transparent focus:bg-white/10 focus:border-primary/50 rounded-xl font-medium transition-all"
           />
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-2 p-1 bg-white/5 rounded-xl border border-white/5">
           <Button
             variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-            size="icon"
+            size="sm"
             onClick={() => setViewMode('grid')}
+            className={`h-10 px-4 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-primary text-primary-foreground shadow-lg' : 'hover:bg-white/10'}`}
           >
             <Grid className="h-4 w-4" />
           </Button>
           <Button
             variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-            size="icon"
+            size="sm"
             onClick={() => setViewMode('list')}
+            className={`h-10 px-4 rounded-lg transition-all ${viewMode === 'list' ? 'bg-primary text-primary-foreground shadow-lg' : 'hover:bg-white/10'}`}
           >
             <List className="h-4 w-4" />
           </Button>
@@ -120,34 +146,39 @@ export default function PlayersPage() {
 
       {/* Players Grid/List */}
       {filteredPlayers.length === 0 ? (
-        <Card className="p-12 text-center">
-          <Users className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
-          <h3 className="text-xl font-semibold mb-2">
-            {searchQuery ? 'No Players Found' : 'No Players Yet'}
-          </h3>
-          <p className="text-muted-foreground mb-4">
-            {searchQuery
-              ? 'Try adjusting your search'
-              : 'Add your first player to get started'}
-          </p>
-          {!searchQuery && (
-            <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Player
-            </Button>
-          )}
-        </Card>
+        <div>
+          <Card className="p-16 text-center glass border-dashed border-white/10 bg-white/5">
+            <div className="w-20 h-20 mx-auto bg-white/5 rounded-full flex items-center justify-center mb-6">
+              <Users className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <h3 className="text-2xl font-black mb-2 tracking-tight">
+              {searchQuery ? 'No Matches Found' : 'Empty Roster'}
+            </h3>
+            <p className="text-muted-foreground mb-8 max-w-xs mx-auto">
+              {searchQuery
+                ? `We couldn't find any players matching "${searchQuery}"`
+                : 'Start building your legacy by adding your first player.'}
+            </p>
+            {!searchQuery && (
+              <Button onClick={() => setIsAddDialogOpen(true)} variant="outline" className="gap-2 border-primary/50 text-primary hover:bg-primary/10">
+                <Plus className="h-4 w-4" />
+                Add First Player
+              </Button>
+            )}
+          </Card>
+        </div>
       ) : (
         <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
           className={
             viewMode === 'grid'
               ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
               : 'space-y-3'
           }
-          layout
         >
-          <AnimatePresence mode="popLayout">
-            {filteredPlayers.map((player) => (
+          {filteredPlayers.map((player) => (
               <PlayerCard
                 key={player.id}
                 player={player}
@@ -156,28 +187,35 @@ export default function PlayersPage() {
                 onDelete={() => handleDeletePlayer(player.id)}
               />
             ))}
-          </AnimatePresence>
         </motion.div>
       )}
 
       {/* Add Player Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add New Player</DialogTitle>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-black/95 border-white/10 backdrop-blur-2xl p-0 gap-0">
+          <DialogHeader className="p-6 pb-4 border-b border-white/10 bg-white/5 sticky top-0 z-10">
+            <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
+              <Plus className="h-5 w-5 text-primary" />
+              NEW SIGNING
+            </DialogTitle>
           </DialogHeader>
-          <PlayerForm
-            onSubmit={handleAddPlayer}
-            onCancel={() => setIsAddDialogOpen(false)}
-          />
+          <div className="p-6">
+            <PlayerForm
+              onSubmit={handleAddPlayer}
+              onCancel={() => setIsAddDialogOpen(false)}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Edit Player Sheet */}
       <Sheet open={!!editingPlayer} onOpenChange={() => setEditingPlayer(null)}>
         <SheetContent className="overflow-y-auto sm:max-w-md w-full bg-black/95 border-l border-white/10 backdrop-blur-xl p-0">
-          <SheetHeader className="p-6 pb-2 border-b border-white/10 bg-black/40 sticky top-0 z-10 backdrop-blur-md">
-            <SheetTitle className="text-xl font-black tracking-tight">EDIT PLAYER</SheetTitle>
+          <SheetHeader className="p-6 pb-4 border-b border-white/10 bg-black/40 sticky top-0 z-10 backdrop-blur-md">
+            <SheetTitle className="text-xl font-black tracking-tight flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              PLAYER DETAILS
+            </SheetTitle>
           </SheetHeader>
           <div className="p-6">
             {editingPlayer && (

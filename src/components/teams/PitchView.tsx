@@ -8,6 +8,7 @@ import {
 import { Team, POSITION_COLORS, PlayerPosition } from '@/lib/types';
 import { calculateTeamOverall, getTeamPositionBreakdown } from '@/lib/team-balancer';
 import { DraggablePlayer } from './DraggablePlayer';
+import { Shield, Crown } from 'lucide-react';
 
 interface PitchViewProps {
   team: Team;
@@ -27,77 +28,74 @@ export function PitchView({ team, side, onMakeCaptain }: PitchViewProps) {
     <div
       ref={setNodeRef}
       className={`
-        relative flex flex-col h-full min-h-[200px] sm:min-h-[250px] rounded-lg sm:rounded-xl overflow-hidden border-2 sm:border-4 transition-colors duration-300
-        ${isOver ? 'border-primary bg-primary/10' : 'border-white/10 bg-black/20'}
+        relative flex flex-col h-full min-h-[500px] rounded-3xl overflow-hidden transition-all duration-500
+        ${isOver ? 'bg-primary/5 shadow-[inset_0_0_50px_rgba(var(--primary),0.2)]' : 'bg-black/40'}
       `}
-      style={{
-        borderColor: isOver ? 'var(--primary)' : team.color,
-      }}
     >
-      {/* Pitch Patterns (Grass Lines) - Hidden on mobile for cleaner look */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none hidden sm:block">
-        <div className="w-full h-full bg-[repeating-linear-gradient(0deg,transparent,transparent_49px,#ffffff_50px)]" />
-        <div className="absolute inset-0 bg-[repeating-linear-gradient(90deg,transparent,transparent_49px,#ffffff_50px)] opacity-30" />
-        {/* Center Circle (Half) */}
-        <div className={`
-          absolute top-1/2 w-24 md:w-32 h-24 md:h-32 border-2 md:border-4 border-white/20 rounded-full -translate-y-1/2
-          ${side === 'left' ? '-right-12 md:-right-16' : '-left-12 md:-left-16'}
-        `} />
-        {/* Penalty Box */}
-        <div className={`
-          absolute top-1/2 w-24 md:w-32 h-48 md:h-64 border-2 md:border-4 border-white/20 -translate-y-1/2
-          ${side === 'left' ? 'left-0 border-l-0' : 'right-0 border-r-0'}
-        `} />
+      {/* Holographic Border */}
+      <div className={`absolute inset-0 border-2 rounded-3xl pointer-events-none z-20 ${isOver ? 'border-primary shadow-[0_0_20px_rgba(var(--primary),0.5)]' : 'border-white/10'}`} />
+
+      {/* Pitch Grid & Lines */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none">
+        {/* Base Grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px]" />
+
+        {/* Tactical Lines */}
+        <div className={`absolute top-0 bottom-0 w-px bg-white/30 ${side === 'left' ? 'right-0' : 'left-0'}`} />
+        <div className={`absolute top-1/2 w-32 h-32 border-2 border-white/30 rounded-full -translate-y-1/2 ${side === 'left' ? '-right-16' : '-left-16'}`} />
+
+        {/* Penalty Area */}
+        <div className={`absolute top-1/2 w-40 h-80 border-2 border-white/30 -translate-y-1/2 ${side === 'left' ? 'left-0 border-l-0 rounded-r-2xl' : 'right-0 border-r-0 rounded-l-2xl'}`} />
+
+        {/* Goal Area */}
+        <div className={`absolute top-1/2 w-16 h-32 border-2 border-white/30 -translate-y-1/2 ${side === 'left' ? 'left-0 border-l-0 rounded-r-xl' : 'right-0 border-r-0 rounded-l-xl'}`} />
       </div>
 
-      {/* Team Header */}
-      <div className="relative z-10 p-2.5 sm:p-4 bg-black/40 backdrop-blur-md border-b border-white/5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-black text-base sm:text-xl uppercase tracking-tight" style={{ color: team.color }}>
-              {team.name}
-            </h3>
-            <div className="flex items-center gap-1.5 mt-1">
-              {(['GK', 'DEF', 'MID', 'ATT'] as PlayerPosition[]).map(pos => (
-                positionBreakdown[pos] > 0 && (
-                  <span
-                    key={pos}
-                    className="text-[9px] sm:text-[10px] font-bold px-1 py-0.5 rounded"
-                    style={{ 
-                      color: POSITION_COLORS[pos],
-                      backgroundColor: `${POSITION_COLORS[pos]}20`
-                    }}
-                  >
-                    {positionBreakdown[pos]}{pos}
-                  </span>
-                )
-              ))}
-              {positionBreakdown.NONE > 0 && (
-                <span className="text-[9px] sm:text-[10px] font-bold px-1 py-0.5 rounded text-muted-foreground bg-white/5">
-                  {positionBreakdown.NONE}?
-                </span>
-              )}
+      {/* Team Header - Floating Glass Card */}
+      <div className="relative z-10 p-6">
+        <div className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl p-4 group hover:bg-white/10 transition-colors">
+          <div className={`absolute inset-0 bg-gradient-to-r opacity-10 transition-opacity group-hover:opacity-20`} style={{ backgroundImage: `linear-gradient(to right, ${team.color}, transparent)` }} />
+
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: `${team.color}20`, color: team.color }}>
+                <Shield className="h-5 w-5 fill-current" />
+              </div>
+              <div>
+                <h3 className="font-black text-lg uppercase tracking-tight leading-none mb-1" style={{ color: team.color }}>
+                  {team.name}
+                </h3>
+                <div className="flex gap-1">
+                  {(['GK', 'DEF', 'MID', 'ATT'] as PlayerPosition[]).map(pos => positionBreakdown[pos] > 0 && (
+                    <span key={pos} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/5 text-muted-foreground border border-white/5">
+                      {positionBreakdown[pos]} {pos}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="flex flex-col items-end">
-            <span className="text-xl sm:text-2xl font-black">{overall}</span>
-            <span className="text-[9px] sm:text-[10px] text-muted-foreground uppercase font-bold">OVR</span>
+
+            <div className="text-right">
+              <div className="text-3xl font-black italic leading-none" style={{ color: team.color }}>
+                {overall}
+              </div>
+              <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Rating</div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Players Container */}
-      <div className="relative flex-1 p-2 sm:p-4 overflow-y-auto">
+      {/* Players List */}
+      <div className="relative flex-1 px-4 pb-4 overflow-y-auto scrollbar-thin">
         <SortableContext
           items={team.players.map((p) => p.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="space-y-1.5 sm:space-y-2">
+          <div className="space-y-2 min-h-[200px]">
             {team.players.length === 0 ? (
-              <div className="h-full min-h-[80px] flex items-center justify-center opacity-30">
-                <p className="text-xs sm:text-lg font-black uppercase tracking-widest text-white text-center px-2">
-                  Drag Players Here
-                </p>
+              <div className="h-full flex flex-col items-center justify-center text-muted-foreground/30 py-12 border-2 border-dashed border-white/5 rounded-2xl">
+                <Shield className="h-12 w-12 mb-2 opacity-50" />
+                <p className="text-sm font-bold uppercase tracking-widest">Empty Formation</p>
               </div>
             ) : (
               team.players.map((player) => (

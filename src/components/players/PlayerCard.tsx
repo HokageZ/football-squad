@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { MoreVertical, Edit, Trash2, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -94,16 +93,10 @@ export function PlayerCard({
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      layout
-      className="h-full"
-    >
+    <div className="h-full">
       <div className={`
         relative h-full overflow-hidden rounded-xl border bg-gradient-to-br backdrop-blur-xl
-        transition-all duration-500 hover:scale-[1.03] hover:-translate-y-1
+        transition-transform duration-200 hover:scale-[1.02]
         ${getCardStyle(overall)}
       `}>
         {/* Decorative Background Pattern */}
@@ -213,7 +206,6 @@ export function PlayerCard({
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
-

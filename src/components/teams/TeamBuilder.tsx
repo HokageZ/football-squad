@@ -14,7 +14,7 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { Shuffle, RotateCcw, Users, Shirt, Trophy, Save, CalendarIcon } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -106,7 +106,7 @@ export function TeamBuilder() {
   const findPlayer = (playerId: string): Player | null => {
     const unassigned = unassignedPlayers.find((p) => p.id === playerId);
     if (unassigned) return unassigned;
-    
+
     for (const team of teams) {
       const player = team.players.find((p) => p.id === playerId);
       if (player) return player;
@@ -230,15 +230,15 @@ export function TeamBuilder() {
 
   const handleCreateMatch = () => {
     if (teams.length < 2 || !matchDate || !matchTime) return;
-    
+
     // Combine date and time
     const [hours, minutes] = matchTime.split(':').map(Number);
     const dateTime = new Date(matchDate);
     dateTime.setHours(hours, minutes, 0, 0);
-    
+
     // Create a match with current teams
     addMatch(teams[0], teams[1], dateTime.toISOString());
-    
+
     setShowMatchDialog(false);
     // Redirect to matches page
     router.push('/matches');
@@ -270,76 +270,74 @@ export function TeamBuilder() {
     >
       <div className="space-y-8">
         {/* Controls */}
-        <div className="glass p-3 sm:p-4 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="flex flex-wrap gap-2 sm:gap-3 justify-center sm:justify-start">
-            <Button onClick={handleRandomizeTeams} className="gap-2 font-bold bg-primary text-primary-foreground hover:bg-primary/90 text-xs sm:text-sm h-9 sm:h-10 px-3 sm:px-4">
-              <Shuffle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+        <div className="sticky top-20 z-30 glass p-2 rounded-2xl border border-white/10 shadow-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+            <Button onClick={handleRandomizeTeams} className="gap-2 font-bold bg-white/5 hover:bg-white/10 text-white border border-white/5 h-10 px-4 rounded-xl transition-all hover:scale-105">
+              <Shuffle className="h-4 w-4" />
               Auto Balance
             </Button>
-            <Button onClick={handleResetTeams} variant="outline" className="gap-2 text-xs sm:text-sm h-9 sm:h-10 px-3 sm:px-4">
-              <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <Button onClick={handleResetTeams} variant="ghost" className="gap-2 h-10 px-4 rounded-xl hover:bg-white/5 text-muted-foreground hover:text-white transition-all">
+              <RotateCcw className="h-4 w-4" />
               Reset
             </Button>
             <div className="hidden sm:block w-px h-8 bg-white/10 mx-2" />
-            <Button onClick={handleOpenMatchDialog} className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white border-none shadow-lg shadow-emerald-500/20 text-xs sm:text-sm h-9 sm:h-10 px-3 sm:px-4">
-              <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <Button
+              onClick={handleOpenMatchDialog}
+              className="gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white border-none shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] h-10 px-6 rounded-xl font-bold transition-all hover:scale-105"
+            >
+              <Trophy className="h-4 w-4" />
               Create Match
             </Button>
           </div>
 
-          <div className="flex items-center justify-center sm:justify-end gap-3 sm:gap-4">
-             <div className="text-xs sm:text-sm font-medium text-muted-foreground">
-                Match Balance
-             </div>
-             <Badge
+          <div className="flex items-center justify-center sm:justify-end gap-3 px-4 py-1 bg-black/20 rounded-xl border border-white/5">
+            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              Balance
+            </div>
+            <Badge
               variant="outline"
-              className={`text-sm sm:text-lg px-2 sm:px-3 py-0.5 sm:py-1 border-2 ${
-                teamDifference <= 1 
-                ? 'border-emerald-500 text-emerald-500 bg-emerald-500/10' 
-                : 'border-rose-500 text-rose-500 bg-rose-500/10'
-              }`}
+              className={`text-sm font-black px-3 py-1 border ${teamDifference <= 1
+                  ? 'border-emerald-500/50 text-emerald-400 bg-emerald-500/10 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
+                  : 'border-rose-500/50 text-rose-400 bg-rose-500/10 shadow-[0_0_10px_rgba(244,63,94,0.2)]'
+                }`}
             >
-              Diff: {teamDifference.toFixed(1)}
+              DIFF: {teamDifference.toFixed(1)}
             </Badge>
           </div>
         </div>
 
         {/* The Pitch */}
-        <div className="relative p-0.5 sm:p-1 rounded-xl sm:rounded-2xl bg-gradient-to-b from-white/10 to-white/5 border border-white/10">
-           <div className="absolute inset-0 bg-[url('/pitch-pattern.svg')] opacity-5" />
-           <div className="grid grid-cols-1 sm:grid-cols-2 gap-0.5 sm:gap-1 min-h-[400px] sm:min-h-[500px] md:min-h-[600px]">
-            <AnimatePresence mode="popLayout">
-              {teams.map((team, index) => (
-                <motion.div
-                  key={team.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="h-full"
-                >
-                  <PitchView 
-                    team={team} 
-                    side={index === 0 ? 'left' : 'right'} 
+        <div className="relative p-1 rounded-[2.5rem] bg-gradient-to-b from-white/10 to-white/5 border border-white/10 shadow-2xl">
+          <div className="absolute inset-0 bg-[url('/pitch-pattern.svg')] opacity-5 rounded-[2.5rem]" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-1 min-h-[600px]">
+{teams.map((team, index) => (
+                <div key={team.id} className="h-full">
+                  <PitchView
+                    team={team}
+                    side={index === 0 ? 'left' : 'right'}
                     onMakeCaptain={(playerId) => handleMakeCaptain(team.id, playerId)}
                   />
-                </motion.div>
+                </div>
               ))}
-            </AnimatePresence>
           </div>
         </div>
 
         {/* Bench (Unassigned Players) */}
         {unassignedPlayers.length > 0 && (
-          <Card className="glass p-4 sm:p-6 border-dashed border-2 border-white/20">
-            <div className="flex items-center gap-2 mb-3 sm:mb-4 text-muted-foreground">
-              <Shirt className="h-4 w-4 sm:h-5 sm:w-5" />
-              <h3 className="font-bold uppercase tracking-widest text-xs sm:text-sm">Bench / Reserves</h3>
-              <Badge variant="secondary" className="ml-auto text-xs">
-                {unassignedPlayers.length}
+          <Card className="glass p-6 border-white/10 bg-black/40 backdrop-blur-xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-lg bg-white/5 border border-white/10">
+                <Shirt className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <h3 className="font-black uppercase tracking-widest text-sm">Reserves</h3>
+                <p className="text-xs text-muted-foreground font-medium">Drag players to the pitch</p>
+              </div>
+              <Badge variant="secondary" className="ml-auto text-xs font-bold bg-white/10 text-white border-white/5">
+                {unassignedPlayers.length} Available
               </Badge>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {unassignedPlayers.map((player) => (
                 <DraggablePlayer key={player.id} player={player} />
               ))}
@@ -366,7 +364,7 @@ export function TeamBuilder() {
               Schedule Match
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
               <span className="font-bold" style={{ color: teams[0]?.color }}>{teams[0]?.name}</span>
@@ -409,7 +407,7 @@ export function TeamBuilder() {
                 className="bg-white/5 border-white/10"
               />
             </div>
-            
+
             {matchDate && matchTime && (
               <div className="text-center p-3 rounded-lg bg-primary/10 border border-primary/20">
                 <span className="text-sm font-bold text-primary">
@@ -423,7 +421,7 @@ export function TeamBuilder() {
             <Button variant="ghost" onClick={() => setShowMatchDialog(false)}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleCreateMatch}
               className="bg-emerald-500 hover:bg-emerald-600 text-white"
               disabled={!matchDate || !matchTime}

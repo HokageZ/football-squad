@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { PlayerProvider } from "@/context/PlayerContext";
 import { MatchProvider } from "@/context/MatchContext";
 import { Header } from "@/components/layout/Header";
+import { BackgroundEffect } from "@/components/layout/BackgroundEffect";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,10 +31,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen overflow-x-hidden`}
       >
+        <BackgroundEffect />
         <PlayerProvider>
           <MatchProvider>
             <Header />
-            <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl">{children}</main>
+            <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl relative z-10">{children}</main>
           </MatchProvider>
         </PlayerProvider>
       </body>
