@@ -1,8 +1,20 @@
-import { Player, PlayerStats, PlayerPosition, STAT_KEYS, Team, POSITIONS } from './types';
+import { Player, PlayerStats, PlayerPosition, STAT_KEYS, Team, POSITIONS, POSITION_STAT_WEIGHTS } from './types';
 
 export function calculateOverall(stats: PlayerStats): number {
   const total = STAT_KEYS.reduce((sum, key) => sum + stats[key], 0);
   return Math.round(total / STAT_KEYS.length);
+}
+
+/**
+ * Calculate position-weighted overall rating.
+ * A GK with high DEF gets a better rating than a GK with high SHO.
+ */
+export function calculatePositionOverall(stats: PlayerStats, position?: PlayerPosition): number {
+  if (!position) return calculateOverall(stats);
+  
+  const weights = POSITION_STAT_WEIGHTS[position];
+  const weighted = STAT_KEYS.reduce((sum, key) => sum + stats[key] * weights[key], 0);
+  return Math.round(weighted);
 }
 
 export function calculateTeamOverall(players: Player[]): number {
@@ -30,17 +42,29 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
+/**
+ * Improved team balancing algorithm:
+ * 1. Uses total strength (sum) instead of just average to penalize teams with fewer players
+ * 2. Snake draft by position groups for position-balanced teams
+ * 3. Iterative swap optimization to minimize rating difference
+ * 4. Handles odd player counts - weaker team gets extra player
+ * 5. Supports excluding benched players
+ */
 export function balanceTeams(
   players: Player[],
   numTeams: number = 2,
-  balanceByPosition: boolean = true
+  balanceByPosition: boolean = true,
+  excludePlayerIds: string[] = []
 ): Team[] {
-  if (players.length === 0) {
+  // Filter out excluded (benched) players
+  const activePlayers = players.filter(p => !excludePlayerIds.includes(p.id));
+  
+  if (activePlayers.length === 0) {
     return createEmptyTeams(numTeams);
   }
 
   // Initialize teams
-  const teams: Team[] = createEmptyTeams(numTeams);
+  let teams: Team[] = createEmptyTeams(numTeams);
 
   if (balanceByPosition) {
     // Group players by position
@@ -49,10 +73,10 @@ export function balanceTeams(
       DEF: [],
       MID: [],
       ATT: [],
-      NONE: [], // Players without position
+      NONE: [],
     };
 
-    players.forEach(p => {
+    activePlayers.forEach(p => {
       const pos = p.position || 'NONE';
       playersByPosition[pos].push(p);
     });
@@ -68,18 +92,16 @@ export function balanceTeams(
     });
 
     // Distribute each position group using snake draft
+    // Start with GK to ensure each team gets one if possible
     const positionOrder = ['GK', 'DEF', 'MID', 'ATT', 'NONE'];
     
     for (const pos of positionOrder) {
       const posPlayers = playersByPosition[pos];
-      let teamIndex = 0;
-      let direction = 1;
+      if (posPlayers.length === 0) continue;
 
-      // Alternate starting team for each position to improve balance
-      const teamOveralls = teams.map(t => calculateTeamTotalOverall(t.players));
-      if (teamOveralls[1] < teamOveralls[0]) {
-        teamIndex = 1;
-      }
+      // Determine starting team: the one with lower total strength goes first
+      let teamIndex = getWeakestTeamIndex(teams);
+      let direction = 1;
 
       for (const player of posPlayers) {
         teams[teamIndex].players.push(player);
@@ -96,8 +118,8 @@ export function balanceTeams(
       }
     }
   } else {
-    // Original behavior: Sort all players by rating
-    const sortedPlayers = [...players].sort((a, b) => {
+    // Sort all players by rating
+    const sortedPlayers = [...activePlayers].sort((a, b) => {
       if (a.isUnknown && b.isUnknown) return 0;
       if (a.isUnknown) return 1;
       if (b.isUnknown) return -1;
@@ -122,16 +144,133 @@ export function balanceTeams(
     }
   }
 
+  // Phase 2: Iterative swap optimization
+  teams = optimizeTeamBalance(teams, numTeams);
+
   return teams;
+}
+
+/**
+ * Find the team with the lowest total strength
+ */
+function getWeakestTeamIndex(teams: Team[]): number {
+  let minTotal = Infinity;
+  let minIndex = 0;
+  
+  teams.forEach((team, index) => {
+    const total = calculateTeamTotalOverall(team.players);
+    if (total < minTotal) {
+      minTotal = total;
+      minIndex = index;
+    }
+  });
+  
+  return minIndex;
+}
+
+/**
+ * Iterative swap optimization:
+ * Try all possible player swaps between teams and keep swaps that reduce the difference.
+ * Also try moving a player from the stronger to the weaker team (for uneven counts).
+ */
+function optimizeTeamBalance(teams: Team[], numTeams: number): Team[] {
+  const MAX_ITERATIONS = 100;
+  let bestTeams = teams.map(t => ({ ...t, players: [...t.players] }));
+  let bestDiff = getMaxTotalDifference(bestTeams);
+  
+  for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
+    let improved = false;
+    
+    for (let i = 0; i < numTeams; i++) {
+      for (let j = i + 1; j < numTeams; j++) {
+        const teamA = bestTeams[i];
+        const teamB = bestTeams[j];
+        
+        // Try all player swaps between team i and team j
+        for (let a = 0; a < teamA.players.length; a++) {
+          for (let b = 0; b < teamB.players.length; b++) {
+            const playerA = teamA.players[a];
+            const playerB = teamB.players[b];
+            
+            if (playerA.isUnknown && playerB.isUnknown) continue;
+            
+            // Only swap players of same position group to maintain position balance
+            const posA = playerA.position || 'NONE';
+            const posB = playerB.position || 'NONE';
+            if (posA !== posB && posA !== 'NONE' && posB !== 'NONE') continue;
+            
+            // Temporarily swap
+            teamA.players[a] = playerB;
+            teamB.players[b] = playerA;
+            
+            const newDiff = getMaxTotalDifference(bestTeams);
+            
+            if (newDiff < bestDiff) {
+              bestDiff = newDiff;
+              improved = true;
+            } else {
+              // Swap back
+              teamA.players[a] = playerA;
+              teamB.players[b] = playerB;
+            }
+          }
+        }
+        
+        // Try moving a player from the stronger team to weaker team (for uneven counts)
+        const totalA = calculateTeamTotalOverall(teamA.players);
+        const totalB = calculateTeamTotalOverall(teamB.players);
+        
+        if (Math.abs(teamA.players.length - teamB.players.length) <= 1) {
+          const strongerTeam = totalA > totalB ? teamA : teamB;
+          const weakerTeam = totalA > totalB ? teamB : teamA;
+          
+          if (strongerTeam.players.length > weakerTeam.players.length) {
+            for (let p = 0; p < strongerTeam.players.length; p++) {
+              const player = strongerTeam.players[p];
+              
+              strongerTeam.players.splice(p, 1);
+              weakerTeam.players.push(player);
+              
+              const newDiff = getMaxTotalDifference(bestTeams);
+              
+              if (newDiff < bestDiff) {
+                bestDiff = newDiff;
+                improved = true;
+                break;
+              } else {
+                weakerTeam.players.pop();
+                strongerTeam.players.splice(p, 0, player);
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    if (!improved) break;
+  }
+  
+  return bestTeams;
+}
+
+/**
+ * Get the maximum total strength difference between any two teams
+ */
+function getMaxTotalDifference(teams: Team[]): number {
+  const totals = teams.map(t => calculateTeamTotalOverall(t.players));
+  const max = Math.max(...totals);
+  const min = Math.min(...totals);
+  return max - min;
 }
 
 export function randomizeTeams(
   players: Player[],
-  numTeams: number = 2
+  numTeams: number = 2,
+  excludePlayerIds: string[] = []
 ): Team[] {
-  // Shuffle players first, then balance
-  const shuffledPlayers = shuffleArray(players);
-  return balanceTeams(shuffledPlayers, numTeams);
+  const activePlayers = players.filter(p => !excludePlayerIds.includes(p.id));
+  const shuffledPlayers = shuffleArray(activePlayers);
+  return balanceTeams(shuffledPlayers, numTeams, true, []);
 }
 
 function createEmptyTeams(numTeams: number): Team[] {
@@ -187,4 +326,65 @@ export function getTeamPositionBreakdown(players: Player[]): Record<PlayerPositi
   });
 
   return breakdown;
+}
+
+/**
+ * Detect the best-fit position based on stat distribution.
+ */
+export function detectBestPosition(stats: PlayerStats): PlayerPosition {
+  let bestPos: PlayerPosition = 'MID';
+  let bestScore = -1;
+  
+  (Object.entries(POSITION_STAT_WEIGHTS) as [PlayerPosition, Record<string, number>][]).forEach(([pos, weights]) => {
+    const score = STAT_KEYS.reduce((sum, key) => sum + stats[key] * weights[key], 0);
+    if (score > bestScore) {
+      bestScore = score;
+      bestPos = pos;
+    }
+  });
+  
+  // Additional heuristic checks
+  if (stats.defending >= 75 && stats.physical >= 70 && stats.shooting <= 55) {
+    return 'DEF';
+  }
+  if (stats.shooting >= 80 && stats.pace >= 75 && stats.defending <= 50) {
+    return 'ATT';
+  }
+  if (stats.defending >= 85 && stats.pace <= 55) {
+    return 'GK';
+  }
+  
+  return bestPos;
+}
+
+/**
+ * Validate stats and return warnings
+ */
+export function validateStats(stats: PlayerStats, position?: PlayerPosition): string[] {
+  const warnings: string[] = [];
+  
+  const allMax = STAT_KEYS.every(key => stats[key] >= 95);
+  if (allMax) {
+    warnings.push('All stats maxed out — is this player really elite in everything?');
+  }
+  
+  if (position === 'GK') {
+    if (stats.shooting >= 85 && stats.defending <= 50) {
+      warnings.push('A goalkeeper with high shooting but low defending is unusual.');
+    }
+  }
+  
+  if (position === 'DEF') {
+    if (stats.defending <= 40) {
+      warnings.push('A defender should typically have higher defending stats.');
+    }
+  }
+  
+  if (position === 'ATT') {
+    if (stats.shooting <= 40 && stats.pace <= 40) {
+      warnings.push('An attacker without pace or shooting may struggle up front.');
+    }
+  }
+  
+  return warnings;
 }
