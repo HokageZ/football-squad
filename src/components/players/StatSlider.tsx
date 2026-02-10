@@ -53,8 +53,8 @@ export function StatSlider({
                   <Info className="h-3 w-3 text-muted-foreground/50 hover:text-muted-foreground transition-colors" />
                 </span>
               </TooltipTrigger>
-              <TooltipContent side="top" className="bg-black/90 border-white/10 backdrop-blur-xl max-w-[200px]">
-                <p className="text-[11px]">{description}</p>
+              <TooltipContent side="top" className="bg-zinc-900 border-white/10 text-white backdrop-blur-xl max-w-[200px] z-50">
+                <p className="text-[11px] font-medium">{description}</p>
               </TooltipContent>
             </Tooltip>
           )}
