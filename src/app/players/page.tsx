@@ -191,8 +191,8 @@ export default function PlayersPage() {
           setEditingPlayer(null);
         }
       }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-black/95 border-white/10 backdrop-blur-2xl p-0 gap-0">
-          <DialogHeader className="p-6 pb-4 border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent sticky top-0 z-10 backdrop-blur-md">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-black/95 border-white/10 p-0 gap-0">
+          <DialogHeader className="p-6 pb-4 border-b border-white/10 bg-zinc-950 sticky top-0 z-50">
             <DialogTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
               {editingPlayer ? (
                 <>
