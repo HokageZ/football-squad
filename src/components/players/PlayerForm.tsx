@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, Upload, X, Eye, EyeOff, Save, UserPlus, Sparkles, ChevronRight, ChevronLeft } from 'lucide-react';
+import { User, Upload, X, Eye, Save, UserPlus, Zap, Shield, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Player,
   PlayerStats,
@@ -23,13 +22,13 @@ import {
   POSITION_COLORS,
   STAT_PRESETS,
 } from '@/lib/types';
-import { calculateOverall, calculatePositionOverall } from '@/lib/team-balancer';
+import { PlayerCard } from './PlayerCard';
 
 const PRESET_CONFIGS = [
-  { key: 'Beginner', label: 'Rookie', color: 'from-slate-600 to-slate-700', range: '40-50' },
-  { key: 'Average', label: 'Amateur', color: 'from-blue-600 to-blue-700', range: '55-65' },
-  { key: 'Good', label: 'Pro', color: 'from-emerald-600 to-emerald-700', range: '70-80' },
-  { key: 'Elite', label: 'Elite', color: 'from-yellow-500 to-yellow-600', range: '85-95' },
+  { key: 'Beginner', label: 'Rookie', color: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20' },
+  { key: 'Average', label: 'Amateur', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+  { key: 'Good', label: 'Pro', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+  { key: 'Elite', label: 'Legend', color: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
 ];
 
 interface PlayerFormProps {
@@ -53,12 +52,19 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
   const [position, setPosition] = useState<PlayerPosition | undefined>(player?.position);
   const [isUnknown, setIsUnknown] = useState(player?.isUnknown || false);
   const [stats, setStats] = useState<PlayerStats>(player?.stats || { ...DEFAULT_STATS });
-  const [activePreset, setActivePreset] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ name?: string }>({});
 
-  // Derived State
-  const overall = calculateOverall(stats);
-  const positionOverall = position ? calculatePositionOverall(stats, position) : null;
+  // Mock player object for preview
+  const previewPlayer: Player = {
+    id: player?.id || 'preview',
+    name: name || 'Player Name',
+    image,
+    position,
+    isUnknown,
+    stats,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -71,7 +77,6 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
 
   const handleStatChange = (key: StatKey, value: number) => {
     setStats(prev => ({ ...prev, [key]: value }));
-    setActivePreset(null);
   };
 
   const applyPreset = (presetKey: string) => {
@@ -79,14 +84,12 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
     const preset = STAT_PRESETS[presetKey]?.[posKey];
     if (preset) {
       setStats({ ...preset });
-      setActivePreset(presetKey);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
     if (!name.trim()) {
       setErrors({ name: 'Player name is required' });
       return;
@@ -101,289 +104,217 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
     });
   };
 
-  const getOverallColorClass = (rating: number) => {
-    if (rating >= 90) return 'text-yellow-400';
-    if (rating >= 80) return 'text-emerald-400';
-    if (rating >= 70) return 'text-blue-400';
-    if (rating >= 60) return 'text-slate-300';
-    return 'text-slate-400';
-  };
-
-  const getStatColorClass = (value: number) => {
-    if (value >= 80) return 'text-emerald-400';
-    if (value >= 70) return 'text-blue-400';
-    if (value >= 60) return 'text-yellow-400';
-    if (value >= 50) return 'text-orange-400';
-    return 'text-red-400';
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Header with Avatar */}
-      <div className="flex items-start gap-6 pb-6 border-b border-white/10">
-        <div className="relative group">
-          <Avatar className="h-28 w-28 border-2 border-white/10 group-hover:border-primary/50 transition-all duration-300 rounded-2xl">
-            <AvatarImage src={image} className="object-cover" />
-            <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/5 text-3xl font-black rounded-2xl">
-              {isUnknown ? '?' : name ? name.substring(0, 2).toUpperCase() : <User className="h-10 w-10" />}
-            </AvatarFallback>
-          </Avatar>
-          {image && (
-            <button
-              type="button"
-              onClick={() => setImage('')}
-              className="absolute -top-2 -right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors z-10"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-          <Label
-            htmlFor="avatar-upload"
-            className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-2xl"
-          >
-            <div className="text-center">
-              <Upload className="h-6 w-6 mx-auto mb-1 text-white" />
-              <span className="text-[10px] font-bold text-white uppercase">Upload</span>
-            </div>
-          </Label>
-          <Input
-            id="avatar-upload"
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="hidden"
-          />
-        </div>
-
-        <div className="flex-1 space-y-4">
-          {/* Name Input */}
-          <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Player Name *
-            </Label>
-            <Input
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (errors.name) setErrors({});
-              }}
-              placeholder="Enter player name"
-              className={`h-12 text-lg font-bold bg-white/5 border-white/10 ${
-                errors.name ? 'border-red-500 focus-visible:ring-red-500' : ''
-              }`}
-            />
-            {errors.name && (
-              <p className="text-xs text-red-400 font-medium">{errors.name}</p>
-            )}
+    <div className="flex flex-col md:flex-row h-[80vh] md:h-[600px] w-full overflow-hidden bg-background">
+      {/* Left Column: Preview (Sticky on Desktop) */}
+      <div className="w-full md:w-[320px] bg-black/20 border-b md:border-b-0 md:border-r border-white/5 p-6 flex flex-col items-center justify-center relative overflow-hidden shrink-0">
+        <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-5 mix-blend-overlay" />
+        <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-primary/5 to-transparent opacity-50" />
+        
+        <div className="relative z-10 w-full max-w-[280px]">
+          <div className="text-center mb-6 space-y-1">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center justify-center gap-2">
+              <Eye className="h-3 w-3" /> Live Preview
+            </h3>
           </div>
-
-          {/* Scouting Mode Toggle */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
-            <div className="flex items-center gap-2">
-              {isUnknown ? (
-                <EyeOff className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <Eye className="h-4 w-4 text-primary" />
-              )}
-              <div>
-                <p className="text-sm font-bold">Scouting Mode</p>
-                <p className="text-[10px] text-muted-foreground">Hide stats until scouted</p>
-              </div>
-            </div>
-            <Switch checked={isUnknown} onCheckedChange={setIsUnknown} />
+          <div className="transform transition-transform hover:scale-105 duration-500 shadow-2xl rounded-xl">
+             <PlayerCard player={previewPlayer} />
           </div>
         </div>
       </div>
 
-      {/* Position Selection */}
-      <div className="space-y-3">
-        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-          Position
-        </Label>
-        <div className="grid grid-cols-4 gap-3">
-          {POSITIONS.map((pos) => (
-            <button
-              key={pos}
-              type="button"
-              onClick={() => setPosition(position === pos ? undefined : pos)}
-              className={`
-                relative p-4 rounded-xl border-2 transition-all duration-200 
-                ${
-                  position === pos
-                    ? 'border-current scale-105 shadow-lg'
-                    : 'border-white/10 hover:border-white/20 hover:bg-white/5'
-                }
-              `}
-              style={{
-                color: position === pos ? POSITION_COLORS[pos] : undefined,
-                borderColor: position === pos ? POSITION_COLORS[pos] : undefined,
-                backgroundColor: position === pos ? `${POSITION_COLORS[pos]}15` : undefined,
-              }}
-            >
-              <div className="text-center">
-                <div className="text-2xl font-black mb-1">{pos}</div>
-                <div className="text-[9px] font-bold uppercase tracking-wider opacity-70">
-                  {POSITION_LABELS[pos]}
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Stats Section */}
-      {!isUnknown && (
-        <div className="space-y-6 pt-4 border-t border-white/10">
-          {/* Overall Rating */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-black to-black border border-primary/20 p-8">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.1),transparent)]" />
-            <div className="relative text-center">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                Overall Rating
-              </p>
-              <div className="flex items-center justify-center gap-6">
-                <div>
-                  <div className={`text-7xl font-black ${getOverallColorClass(overall)}`}>
-                    {overall}
-                  </div>
-                  <p className="text-xs text-muted-foreground font-bold mt-1">Average</p>
-                </div>
-                {position && positionOverall !== null && positionOverall !== overall && (
-                  <div className="text-left pl-6 border-l-2 border-white/10">
-                    <div className={`text-4xl font-black ${getOverallColorClass(positionOverall)}`}>
-                      {positionOverall}
-                    </div>
-                    <p className="text-xs text-muted-foreground font-bold mt-1">
-                      {position} Rating
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Presets */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Quick Presets
-              </Label>
-              {position && (
-                <Badge variant="outline" className="text-[9px] ml-auto bg-white/5 border-white/10">
-                  Optimized for {position}
-                </Badge>
-              )}
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {PRESET_CONFIGS.map(({ key, label, color, range }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => applyPreset(key)}
-                  className={`
-                    relative overflow-hidden p-4 rounded-xl border-2 transition-all 
-                    ${
-                      activePreset === key
-                        ? 'border-white/30 scale-105'
-                        : 'border-white/10 hover:border-white/20'
-                    }
-                  `}
-                >
-                  <div
-                    className={`absolute inset-0 bg-gradient-to-br ${color} opacity-${
-                      activePreset === key ? '20' : '10'
-                    } transition-opacity`}
+      {/* Right Column: Form Inputs */}
+      <div className="flex-1 flex flex-col min-h-0 bg-background/50 backdrop-blur-sm">
+        <ScrollArea className="flex-1">
+          <form id="player-form" onSubmit={handleSubmit} className="p-6 md:p-8 space-y-10">
+            
+            {/* Identity Section */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-black tracking-tight flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  IDENTITY
+                </h3>
+                <div className="flex items-center gap-2 bg-white/5 p-1 rounded-full border border-white/10">
+                  <span className={`text-[10px] font-bold px-3 py-1 rounded-full transition-colors ${!isUnknown ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
+                    Public
+                  </span>
+                  <Switch 
+                    checked={isUnknown} 
+                    onCheckedChange={setIsUnknown}
+                    className="scale-75 data-[state=checked]:bg-indigo-500"
                   />
-                  <div className="relative text-center">
-                    <div className="text-sm font-black mb-0.5">{label}</div>
-                    <div className="text-[9px] text-muted-foreground font-bold">{range}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+                  <span className={`text-[10px] font-bold px-3 py-1 rounded-full transition-colors ${isUnknown ? 'bg-indigo-500 text-white' : 'text-muted-foreground'}`}>
+                    Hidden
+                  </span>
+                </div>
+              </div>
 
-          {/* Stats Grid */}
-          <div className="space-y-4">
-            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Attributes
-            </Label>
-            <div className="grid gap-5 p-6 rounded-2xl bg-white/5 border border-white/10">
-              {STAT_KEYS.map((key) => {
-                const value = stats[key];
-                const color = STAT_COLORS[key];
-                return (
-                  <div key={key} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-                        {STAT_LABELS[key]}
-                      </label>
-                      <span
-                        className={`text-xl font-black tabular-nums ${getStatColorClass(value)}`}
+              <div className="grid gap-6">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Name</Label>
+                  <Input
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (errors.name) setErrors({});
+                    }}
+                    placeholder="Player Name"
+                    className="h-12 bg-white/5 border-white/10 text-lg font-bold focus-visible:ring-primary"
+                  />
+                  {errors.name && <p className="text-xs text-red-500 font-bold">{errors.name}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Photo</Label>
+                   <div className="flex gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload"
+                    />
+                    <label
+                      htmlFor="image-upload"
+                      className="flex-1 h-10 flex items-center justify-center gap-2 bg-white/5 border border-white/10 rounded-md cursor-pointer hover:bg-white/10 transition-colors text-sm font-bold text-muted-foreground hover:text-foreground"
+                    >
+                      <Upload className="h-4 w-4" />
+                      Upload Photo
+                    </label>
+                    {image && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => setImage('')}
+                        className="h-10 w-10 shrink-0 rounded-md"
                       >
-                        {value}
-                      </span>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Position Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-black tracking-tight flex items-center gap-2">
+                <Shield className="h-5 w-5 text-emerald-400" />
+                POSITION
+              </h3>
+              <div className="grid grid-cols-4 gap-3">
+                {POSITIONS.map((pos) => (
+                  <button
+                    key={pos}
+                    type="button"
+                    onClick={() => setPosition(position === pos ? undefined : pos)}
+                    className={`
+                      relative p-3 rounded-xl border-2 transition-all duration-200 group overflow-hidden
+                      ${position === pos 
+                        ? 'border-current bg-current/10 shadow-lg scale-[1.02]' 
+                        : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10 opacity-70 hover:opacity-100'
+                      }
+                    `}
+                    style={{ 
+                      color: position === pos ? POSITION_COLORS[pos] : undefined,
+                      borderColor: position === pos ? POSITION_COLORS[pos] : undefined
+                    }}
+                  >
+                    <div className="relative z-10 text-center">
+                      <div className="text-xl font-black">{pos}</div>
+                      <div className="text-[8px] font-bold uppercase tracking-widest opacity-60">
+                        {POSITION_LABELS[pos]}
+                      </div>
                     </div>
-                    <div className="relative">
-                      {/* Background gradient zones */}
-                      <div className="absolute inset-y-0 left-0 right-0 h-2 rounded-full overflow-hidden opacity-20 pointer-events-none">
-                        <div className="flex h-full">
-                          <div className="w-[40%] bg-gradient-to-r from-red-500 to-orange-500" />
-                          <div className="w-[20%] bg-gradient-to-r from-orange-500 to-yellow-500" />
-                          <div className="w-[20%] bg-gradient-to-r from-yellow-500 to-emerald-500" />
-                          <div className="w-[20%] bg-gradient-to-r from-emerald-500 to-primary" />
-                        </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Stats Section */}
+            {!isUnknown && (
+              <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-black tracking-tight flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-yellow-400" />
+                    ATTRIBUTES
+                  </h3>
+                  
+                  {/* Presets Toolbar */}
+                  <div className="flex gap-1">
+                    {PRESET_CONFIGS.map((preset) => (
+                      <button
+                        key={preset.key}
+                        type="button"
+                        onClick={() => applyPreset(preset.key)}
+                        className={`text-[9px] font-bold px-2 py-1 rounded-md border transition-all hover:scale-105 active:scale-95 ${preset.color}`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-8 p-1">
+                  {STAT_KEYS.map((key) => (
+                    <div key={key} className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor]" style={{ color: STAT_COLORS[key], backgroundColor: STAT_COLORS[key] }} />
+                          {STAT_LABELS[key]}
+                        </label>
+                        <span className="text-lg font-black tabular-nums" style={{ color: STAT_COLORS[key] }}>
+                          {stats[key]}
+                        </span>
                       </div>
                       <Slider
-                        value={[value]}
+                        value={[stats[key]]}
                         onValueChange={([v]) => handleStatChange(key, v)}
                         min={1}
                         max={99}
                         step={1}
-                        className="relative z-10"
-                        style={
-                          {
-                            '--slider-color': color,
-                          } as React.CSSProperties
-                        }
+                        className="cursor-pointer"
+                        style={{ '--slider-color': STAT_COLORS[key] } as React.CSSProperties}
                       />
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
+                  ))}
+                </div>
+              </div>
+            )}
+          </form>
+        </ScrollArea>
 
-      {/* Form Actions */}
-      <div className="flex gap-3 pt-6 border-t border-white/10">
-        <Button
-          type="button"
-          onClick={onCancel}
-          variant="outline"
-          className="flex-1 h-12 font-bold border-white/10 hover:bg-white/5"
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          className="flex-1 h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 font-bold shadow-lg"
-        >
-          {isEditing ? (
-            <>
-              <Save className="mr-2 h-4 w-4" />
-              Save Changes
-            </>
-          ) : (
-            <>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add Player
-            </>
-          )}
-        </Button>
+        {/* Footer Actions (Fixed at bottom) */}
+        <div className="p-4 border-t border-white/10 bg-black/40 backdrop-blur-md flex gap-3 z-20">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onCancel}
+            className="flex-1 h-12 rounded-xl font-bold hover:bg-white/5 text-muted-foreground hover:text-foreground"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="player-form"
+            className="flex-1 h-12 rounded-xl font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition-all hover:scale-[1.02]"
+          >
+            {isEditing ? (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Save Changes
+              </>
+            ) : (
+              <>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Create Player
+              </>
+            )}
+          </Button>
+        </div>
       </div>
-    </form>
+    </div>
   );
 }
