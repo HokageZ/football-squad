@@ -287,15 +287,19 @@ export function TeamBuilder() {
     
     const container = findPlayerContainer(playerId);
     if (container === 'bench') return;
+    if (!container) return; // Player not found in any container
     
     // Remove from current container
     if (container === 'unassigned') {
       setUnassignedPlayers(prev => prev.filter(p => p.id !== playerId));
-    } else {
+    } else if (teams.find(t => t.id === container)) {
+      // Only update teams if container is a valid team ID
       setTeams(prev => prev.map(team => ({
         ...team,
         players: team.players.filter(p => p.id !== playerId)
       })));
+    } else {
+      return; // Unknown container, don't proceed
     }
     
     // Add to bench

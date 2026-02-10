@@ -129,7 +129,7 @@ export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain, o
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <p className="font-bold text-xs sm:text-sm truncate text-gray-200">{player.name}</p>
+          <p className="font-bold text-xs sm:text-sm truncate text-foreground">{player.name}</p>
           {player.position && (
             <span 
               className="text-[9px] sm:text-[10px] font-bold px-1 py-0.5 rounded shrink-0"
