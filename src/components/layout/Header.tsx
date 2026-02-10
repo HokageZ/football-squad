@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Trophy, Users, Swords, Calendar, Menu, X } from 'lucide-react';
@@ -18,6 +18,38 @@ const navItems = [
 export function Header() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const itemRefs = useRef<Map<string, HTMLAnchorElement>>(new Map());
+  const [pillStyle, setPillStyle] = useState<{ left: number; width: number } | null>(null);
+  const [isInitial, setIsInitial] = useState(true);
+
+  const measurePill = useCallback(() => {
+    const nav = navRef.current;
+    const activeEl = itemRefs.current.get(pathname);
+    if (!nav || !activeEl) {
+      setPillStyle(null);
+      return;
+    }
+    const navRect = nav.getBoundingClientRect();
+    const elRect = activeEl.getBoundingClientRect();
+    setPillStyle({
+      left: elRect.left - navRect.left,
+      width: elRect.width,
+    });
+  }, [pathname]);
+
+  useEffect(() => {
+    measurePill();
+    // After first measurement, enable transitions
+    const timer = setTimeout(() => setIsInitial(false), 50);
+    return () => clearTimeout(timer);
+  }, [measurePill]);
+
+  // Re-measure on resize
+  useEffect(() => {
+    window.addEventListener('resize', measurePill);
+    return () => window.removeEventListener('resize', measurePill);
+  }, [measurePill]);
 
   // Lock body scroll when menu is open
   useEffect(() => {
@@ -48,27 +80,31 @@ export function Header() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden sm:flex items-center gap-1">
+          <nav ref={navRef} className="hidden sm:flex items-center gap-1 relative">
+            {/* Animated pill - positioned relative to nav container */}
+            {pillStyle && (
+              <motion.div
+                className="absolute top-0 h-full bg-primary rounded-full shadow-[0_0_20px_rgba(var(--primary),0.4)]"
+                animate={{ left: pillStyle.left, width: pillStyle.width }}
+                transition={isInitial ? { duration: 0 } : { type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
             {navItems.map(({ href, label, icon: Icon }) => {
               const isActive = pathname === href;
               return (
                 <Link
                   key={href}
                   href={href}
+                  ref={(el) => {
+                    if (el) itemRefs.current.set(href, el);
+                  }}
                   className={cn(
-                    'relative flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-300',
+                    'relative flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-colors duration-300',
                     isActive
                       ? 'text-black'
                       : 'text-muted-foreground hover:text-white hover:bg-white/5'
                   )}
                 >
-                  {isActive && (
-                    <motion.div
-                      layoutId="nav-pill"
-                      className="absolute inset-0 bg-primary rounded-full shadow-[0_0_20px_rgba(var(--primary),0.4)]"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
                   <Icon className={cn("h-4 w-4 relative z-10", isActive ? "text-black" : "text-current")} />
                   <span className="relative z-10">{label}</span>
                 </Link>
