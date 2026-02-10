@@ -221,7 +221,7 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
                 >
                   <div className="relative z-10 text-center">
                     <span className="block text-lg font-black tracking-tight">{pos}</span>
-                    <span className="block text-[9px] font-bold uppercase tracking-wider opacity-60 mt-0.5">
+                    <span className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mt-0.5 group-hover:opacity-100 transition-opacity">
                       {POSITION_LABELS[pos]}
                     </span>
                   </div>
@@ -280,36 +280,43 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
               </div>
 
               {/* Quick Presets */}
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-                    <Sparkles className="h-3 w-3" />
+                  <Label className="text-sm font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
                     Quick Presets
                   </Label>
-                  <span className="text-[10px] text-muted-foreground font-medium">
-                    {position ? `Tuned for ${position}` : 'General preset'}
+                  <span className="text-xs text-muted-foreground font-medium bg-white/5 px-2 py-1 rounded-full">
+                    {position ? `Tuned for ${position}` : 'General templates'}
                   </span>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {PRESET_LEVELS.map(({ key, label, emoji, description }) => (
                     <Tooltip key={key}>
                       <TooltipTrigger asChild>
                         <button
                           type="button"
                           onClick={() => handleApplyPreset(key)}
-                          className={`p-2.5 rounded-xl border transition-all duration-200 text-center ${
-                            activePreset === key 
-                              ? 'border-primary bg-primary/10 shadow-[0_0_10px_-3px] shadow-primary/30' 
-                              : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10'
-                          }`}
+                          className={`
+                            relative overflow-hidden p-3 rounded-2xl border transition-all duration-300 group
+                            ${activePreset === key 
+                              ? 'border-primary bg-primary/10 shadow-[0_0_20px_-5px_rgba(var(--primary),0.3)] scale-[1.02]' 
+                              : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 hover:scale-[1.02]'
+                            }
+                          `}
                         >
-                          <span className="text-lg block">{emoji}</span>
-                          <span className="text-[10px] font-bold uppercase tracking-wider block mt-0.5">{label}</span>
+                          <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-white/5 to-transparent`} />
+                          <div className="relative z-10 flex flex-col items-center gap-1">
+                            <span className="text-2xl filter drop-shadow-lg">{emoji}</span>
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${activePreset === key ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'}`}>
+                              {label}
+                            </span>
+                          </div>
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="bottom" className="bg-black/90 border-white/10 backdrop-blur-xl">
+                      <TooltipContent side="bottom" className="bg-zinc-900 border-white/10 text-white backdrop-blur-xl">
                         <p className="text-xs font-bold">{description}</p>
-                        {position && <p className="text-[10px] text-muted-foreground mt-0.5">Stats optimized for {POSITION_LABELS[position]}</p>}
+                        {position && <p className="text-[10px] text-muted-foreground mt-1">Stats optimized for {POSITION_LABELS[position]}</p>}
                       </TooltipContent>
                     </Tooltip>
                   ))}
