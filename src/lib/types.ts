@@ -49,6 +49,7 @@ export interface Match {
   date: string;
   teamA: Team;
   teamB: Team;
+  bench?: Player[];
   scoreA?: number;
   scoreB?: number;
   status: 'scheduled' | 'completed';
@@ -90,4 +91,53 @@ export const DEFAULT_STATS: PlayerStats = {
   passing: 60,
   defending: 60,
   physical: 60,
+};
+
+export const STAT_DESCRIPTIONS: Record<StatKey, string> = {
+  pace: 'Speed & acceleration. How fast can the player sprint?',
+  shooting: 'Finishing & shot power. How deadly in front of goal?',
+  dribbling: 'Ball control & agility. How well do they handle the ball?',
+  passing: 'Short & long passing accuracy. How well do they distribute?',
+  defending: 'Tackling & interceptions. How solid are they defensively?',
+  physical: 'Strength & stamina. How physical is the player?',
+};
+
+// Position-based stat weights for calculating position-specific overall
+export const POSITION_STAT_WEIGHTS: Record<PlayerPosition, Record<StatKey, number>> = {
+  GK: { pace: 0.05, shooting: 0.05, dribbling: 0.1, passing: 0.15, defending: 0.35, physical: 0.3 },
+  DEF: { pace: 0.15, shooting: 0.05, dribbling: 0.1, passing: 0.15, defending: 0.35, physical: 0.2 },
+  MID: { pace: 0.1, shooting: 0.15, dribbling: 0.2, passing: 0.3, defending: 0.1, physical: 0.15 },
+  ATT: { pace: 0.2, shooting: 0.3, dribbling: 0.25, passing: 0.1, defending: 0.05, physical: 0.1 },
+};
+
+// Stat presets by skill level and position
+export const STAT_PRESETS: Record<string, Record<PlayerPosition | 'ANY', PlayerStats>> = {
+  Beginner: {
+    ANY: { pace: 45, shooting: 42, dribbling: 40, passing: 43, defending: 44, physical: 46 },
+    GK: { pace: 38, shooting: 30, dribbling: 35, passing: 42, defending: 48, physical: 47 },
+    DEF: { pace: 44, shooting: 32, dribbling: 38, passing: 40, defending: 48, physical: 46 },
+    MID: { pace: 42, shooting: 40, dribbling: 44, passing: 48, defending: 40, physical: 42 },
+    ATT: { pace: 48, shooting: 46, dribbling: 44, passing: 38, defending: 30, physical: 40 },
+  },
+  Average: {
+    ANY: { pace: 60, shooting: 58, dribbling: 57, passing: 59, defending: 58, physical: 60 },
+    GK: { pace: 50, shooting: 40, dribbling: 48, passing: 58, defending: 65, physical: 62 },
+    DEF: { pace: 58, shooting: 45, dribbling: 50, passing: 55, defending: 65, physical: 62 },
+    MID: { pace: 57, shooting: 55, dribbling: 62, passing: 65, defending: 52, physical: 58 },
+    ATT: { pace: 63, shooting: 65, dribbling: 60, passing: 52, defending: 40, physical: 55 },
+  },
+  Good: {
+    ANY: { pace: 74, shooting: 72, dribbling: 73, passing: 74, defending: 73, physical: 75 },
+    GK: { pace: 62, shooting: 48, dribbling: 60, passing: 72, defending: 80, physical: 78 },
+    DEF: { pace: 72, shooting: 55, dribbling: 62, passing: 68, defending: 80, physical: 76 },
+    MID: { pace: 70, shooting: 70, dribbling: 78, passing: 80, defending: 65, physical: 72 },
+    ATT: { pace: 78, shooting: 80, dribbling: 76, passing: 65, defending: 48, physical: 68 },
+  },
+  Elite: {
+    ANY: { pace: 88, shooting: 86, dribbling: 87, passing: 88, defending: 87, physical: 89 },
+    GK: { pace: 75, shooting: 55, dribbling: 72, passing: 85, defending: 92, physical: 88 },
+    DEF: { pace: 85, shooting: 65, dribbling: 75, passing: 82, defending: 92, physical: 88 },
+    MID: { pace: 84, shooting: 82, dribbling: 90, passing: 92, defending: 78, physical: 85 },
+    ATT: { pace: 92, shooting: 93, dribbling: 90, passing: 78, defending: 55, physical: 80 },
+  },
 };

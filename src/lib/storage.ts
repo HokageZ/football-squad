@@ -6,6 +6,8 @@ const PLAYERS_KEY = 'football_squad_players';
 const MATCHES_KEY = 'football_squad_matches';
 const TEAMS_KEY = 'football_squad_teams';
 const UNASSIGNED_KEY = 'football_squad_unassigned';
+const BENCH_KEY = 'football_squad_bench';
+const NOTIFICATION_SCHEDULE_KEY = 'football_squad_notifications';
 
 export function getStoredPlayers(): Player[] {
   if (typeof window === 'undefined') return [];
@@ -104,4 +106,48 @@ export function setStoredUnassigned(playerIds: string[]): void {
       console.error('Failed to save unassigned players:', error);
     }
   });
+}
+
+export function getStoredBench(): string[] {
+  if (typeof window === 'undefined') return [];
+  
+  try {
+    const data = localStorage.getItem(BENCH_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function setStoredBench(playerIds: string[]): void {
+  if (typeof window === 'undefined') return;
+  
+  requestAnimationFrame(() => {
+    try {
+      localStorage.setItem(BENCH_KEY, JSON.stringify(playerIds));
+    } catch (error) {
+      console.error('Failed to save bench players:', error);
+    }
+  });
+}
+
+export function getStoredNotificationSchedule(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  
+  try {
+    const data = localStorage.getItem(NOTIFICATION_SCHEDULE_KEY);
+    return data ? JSON.parse(data) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function setStoredNotificationSchedule(schedule: Record<string, string>): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.setItem(NOTIFICATION_SCHEDULE_KEY, JSON.stringify(schedule));
+  } catch (error) {
+    console.error('Failed to save notification schedule:', error);
+  }
 }
