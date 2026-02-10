@@ -1,6 +1,6 @@
 'use client';
 
-import { MoreVertical, Edit, Trash2, User } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, User, Zap } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -11,8 +11,37 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Player, STAT_KEYS, STAT_LABELS, POSITION_COLORS } from '@/lib/types';
-import { calculateOverall } from '@/lib/team-balancer';
+import { calculateOverall, calculatePositionOverall, detectBestPosition } from '@/lib/team-balancer';
 import { StatRadar } from './StatRadar';
+
+function getPlayerType(player: Player): { label: string; color: string } {
+  const s = player.stats;
+  if (player.isUnknown) return { label: 'Unknown', color: 'text-muted-foreground' };
+
+  // Check dominant stats to determine archetype
+  if (s.pace >= 80 && s.shooting >= 75 && s.dribbling >= 75) return { label: 'Speedster', color: 'text-cyan-400' };
+  if (s.shooting >= 80 && s.passing >= 70) return { label: 'Playmaker', color: 'text-purple-400' };
+  if (s.defending >= 80 && s.physical >= 75) return { label: 'Wall', color: 'text-blue-400' };
+  if (s.pace >= 80 && s.dribbling >= 80) return { label: 'Winger', color: 'text-emerald-400' };
+  if (s.shooting >= 85) return { label: 'Sniper', color: 'text-red-400' };
+  if (s.passing >= 80) return { label: 'Maestro', color: 'text-yellow-400' };
+  if (s.physical >= 80) return { label: 'Tank', color: 'text-orange-400' };
+  if (s.defending >= 80) return { label: 'Anchor', color: 'text-indigo-400' };
+  if (s.dribbling >= 80) return { label: 'Technician', color: 'text-pink-400' };
+  
+  const overall = calculateOverall(s);
+  if (overall >= 80) return { label: 'Complete', color: 'text-primary' };
+  if (overall >= 65) return { label: 'Balanced', color: 'text-muted-foreground' };
+  return { label: 'Prospect', color: 'text-muted-foreground' };
+}
+
+function getStatColor(value: number): string {
+  if (value >= 85) return 'text-primary';
+  if (value >= 75) return 'text-emerald-400';
+  if (value >= 60) return 'text-yellow-400';
+  if (value >= 40) return 'text-orange-400';
+  return 'text-red-400';
+}
 
 interface PlayerCardProps {
   player: Player;
@@ -28,6 +57,8 @@ export function PlayerCard({
   compact = false,
 }: PlayerCardProps) {
   const overall = calculateOverall(player.stats);
+  const playerType = getPlayerType(player);
+  const posOverall = player.position ? calculatePositionOverall(player.stats, player.position) : null;
 
   const getCardStyle = (rating: number) => {
     if (player.isUnknown) return 'from-zinc-900 to-black border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1)]';
@@ -76,9 +107,10 @@ export function PlayerCard({
                   <span className="italic">Scouting In Progress...</span>
                 ) : (
                   <>
-                    <span>PAC <span className="text-foreground font-mono">{player.stats.pace}</span></span>
-                    <span>SHO <span className="text-foreground font-mono">{player.stats.shooting}</span></span>
-                    <span>PAS <span className="text-foreground font-mono">{player.stats.passing}</span></span>
+                    <span>PAC <span className={`font-mono ${getStatColor(player.stats.pace)}`}>{player.stats.pace}</span></span>
+                    <span>SHO <span className={`font-mono ${getStatColor(player.stats.shooting)}`}>{player.stats.shooting}</span></span>
+                    <span>PAS <span className={`font-mono ${getStatColor(player.stats.passing)}`}>{player.stats.passing}</span></span>
+                    <span className={`ml-1 ${playerType.color}`}>{playerType.label}</span>
                   </>
                 )}
               </div>
@@ -158,16 +190,30 @@ export function PlayerCard({
             <h3 className="text-xl font-black uppercase tracking-tight truncate px-2">
               {player.name}
             </h3>
-            {player.position && (
-              <span 
-                className="inline-block mt-2 text-xs font-bold px-2 py-0.5 rounded"
-                style={{ 
-                  color: POSITION_COLORS[player.position],
-                  backgroundColor: `${POSITION_COLORS[player.position]}20`
-                }}
-              >
-                {player.position}
-              </span>
+            <div className="flex items-center justify-center gap-2 mt-2">
+              {player.position && (
+                <span 
+                  className="inline-block text-xs font-bold px-2 py-0.5 rounded"
+                  style={{ 
+                    color: POSITION_COLORS[player.position],
+                    backgroundColor: `${POSITION_COLORS[player.position]}20`
+                  }}
+                >
+                  {player.position}
+                </span>
+              )}
+              {!player.isUnknown && (
+                <span className={`text-[10px] font-bold ${playerType.color} bg-white/5 px-1.5 py-0.5 rounded`}>
+                  {playerType.label}
+                </span>
+              )}
+            </div>
+            {/* Position-weighted rating */}
+            {posOverall !== null && posOverall !== overall && !player.isUnknown && (
+              <div className="flex items-center justify-center gap-1 mt-1.5">
+                <Zap className="h-3 w-3 text-muted-foreground" />
+                <span className="text-[10px] font-bold text-muted-foreground">{player.position} Rating: {posOverall}</span>
+              </div>
             )}
             <div className={`h-1 w-12 mx-auto mt-2 opacity-50 ${player.isUnknown ? 'bg-white/20' : 'bg-gradient-to-r from-transparent via-primary to-transparent'}`} />
           </div>
@@ -194,9 +240,7 @@ export function PlayerCard({
                     {STAT_LABELS[key]}
                   </span>
                   <span className={`font-mono font-bold text-sm ${
-                    player.isUnknown ? 'text-muted-foreground' :
-                    player.stats[key] >= 80 ? 'text-primary' : 
-                    player.stats[key] >= 60 ? 'text-foreground' : 'text-muted-foreground'
+                    player.isUnknown ? 'text-muted-foreground' : getStatColor(player.stats[key])
                   }`}>
                     {player.isUnknown ? '?' : player.stats[key]}
                   </span>
