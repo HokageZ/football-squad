@@ -12,12 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 import { usePlayers } from '@/context/PlayerContext';
 import { Player, PlayerStats, PlayerPosition } from '@/lib/types';
 import { PlayerCard } from '@/components/players/PlayerCard';
@@ -190,44 +184,46 @@ export default function PlayersPage() {
         </motion.div>
       )}
 
-      {/* Add Player Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto bg-black/95 border-white/10 backdrop-blur-2xl p-0 gap-0">
-          <DialogHeader className="p-6 pb-4 border-b border-white/10 bg-white/5 sticky top-0 z-10">
-            <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2">
-              <Plus className="h-5 w-5 text-primary" />
-              NEW SIGNING
+      {/* Player Form Dialog (unified for Add/Edit) */}
+      <Dialog open={isAddDialogOpen || !!editingPlayer} onOpenChange={(open) => {
+        if (!open) {
+          setIsAddDialogOpen(false);
+          setEditingPlayer(null);
+        }
+      }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-black/95 border-white/10 backdrop-blur-2xl p-0 gap-0">
+          <DialogHeader className="p-6 pb-4 border-b border-white/10 bg-gradient-to-b from-white/5 to-transparent sticky top-0 z-10 backdrop-blur-md">
+            <DialogTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
+              {editingPlayer ? (
+                <>
+                  <Users className="h-6 w-6 text-primary" />
+                  EDIT PLAYER
+                </>
+              ) : (
+                <>
+                  <Plus className="h-6 w-6 text-primary" />
+                  NEW SIGNING
+                </>
+              )}
             </DialogTitle>
+            {editingPlayer && (
+              <p className="text-xs text-muted-foreground font-medium mt-1">
+                Updating {editingPlayer.name}
+              </p>
+            )}
           </DialogHeader>
           <div className="p-6">
             <PlayerForm
-              onSubmit={handleAddPlayer}
-              onCancel={() => setIsAddDialogOpen(false)}
+              player={editingPlayer || undefined}
+              onSubmit={editingPlayer ? handleEditPlayer : handleAddPlayer}
+              onCancel={() => {
+                setIsAddDialogOpen(false);
+                setEditingPlayer(null);
+              }}
             />
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Edit Player Sheet */}
-      <Sheet open={!!editingPlayer} onOpenChange={() => setEditingPlayer(null)}>
-        <SheetContent className="overflow-y-auto sm:max-w-md w-full bg-black/95 border-l border-white/10 backdrop-blur-xl p-0">
-          <SheetHeader className="p-6 pb-4 border-b border-white/10 bg-black/40 sticky top-0 z-10 backdrop-blur-md">
-            <SheetTitle className="text-xl font-black tracking-tight flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              PLAYER DETAILS
-            </SheetTitle>
-          </SheetHeader>
-          <div className="p-6">
-            {editingPlayer && (
-              <PlayerForm
-                player={editingPlayer}
-                onSubmit={handleEditPlayer}
-                onCancel={() => setEditingPlayer(null)}
-              />
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }

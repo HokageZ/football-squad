@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { User, Upload, X, EyeOff, Eye, Zap, Info, AlertTriangle, Sparkles, Target } from 'lucide-react';
+import { User, Upload, X, EyeOff, Eye, Zap, AlertTriangle, Sparkles, Target, Save, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,6 +46,7 @@ interface PlayerFormProps {
 }
 
 export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
+  const isEditing = !!player;
   const [name, setName] = useState(player?.name || '');
   const [image, setImage] = useState(player?.image || '');
   const [stats, setStats] = useState<PlayerStats>(
@@ -54,10 +55,10 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
   const [isUnknown, setIsUnknown] = useState(player?.isUnknown || false);
   const [position, setPosition] = useState<PlayerPosition | undefined>(player?.position);
   const [errors, setErrors] = useState<{ name?: string }>({});
-  const [showGuide, setShowGuide] = useState(false);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [detectedPosition, setDetectedPosition] = useState<PlayerPosition | null>(null);
   const [activePreset, setActivePreset] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState<'basics' | 'stats'>('basics');
 
   // Detect best position and validate stats when stats change
   useEffect(() => {
@@ -103,6 +104,7 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      setCurrentStep('basics');
       return;
     }
 
@@ -126,162 +128,212 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
 
   const getStatImportance = (weight: number | null): string => {
     if (weight === null) return '';
-    if (weight >= 0.25) return 'Key stat';
+    if (weight >= 0.25) return 'Key';
     if (weight >= 0.15) return 'Important';
-    return 'Minor';
+    return '';
   };
 
   const getStatImportanceColor = (weight: number | null): string => {
     if (weight === null) return '';
     if (weight >= 0.25) return 'text-primary';
     if (weight >= 0.15) return 'text-blue-400';
-    return 'text-muted-foreground';
+    return '';
   };
 
   return (
     <TooltipProvider delayDuration={200}>
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Avatar Section */}
-        <div className="flex flex-col items-center gap-6">
-          <div className="relative group">
-            <div className={`absolute inset-0 rounded-full blur-xl bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity`} />
-            <Avatar className={`h-32 w-32 border-4 shadow-2xl transition-all duration-300 ${isUnknown ? 'border-white/10 opacity-50' : 'border-primary/30 group-hover:border-primary/50'}`}>
-              <AvatarImage src={image} alt={name || 'Player'} className="object-cover" />
-              <AvatarFallback className="bg-gradient-to-br from-white/10 to-black/20 text-4xl font-black">
-                {isUnknown ? '?' : (name ? name.substring(0, 2).toUpperCase() : <User className="h-12 w-12" />)}
-              </AvatarFallback>
-            </Avatar>
-            {image && (
-              <button
-                type="button"
-                onClick={() => setImage('')}
-                className="absolute top-0 right-0 p-1.5 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-all shadow-lg hover:scale-110"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-          <div>
-            <Label
-              htmlFor="image-upload"
-              className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-all hover:scale-105 font-bold text-xs uppercase tracking-wider"
-            >
-              <Upload className="h-3.5 w-3.5" />
-              {image ? 'Change Photo' : 'Upload Photo'}
-            </Label>
-            <Input
-              id="image-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="hidden"
-            />
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Step Indicator */}
+        <div className="flex items-center gap-2 p-1 bg-white/5 rounded-xl border border-white/10">
+          <button
+            type="button"
+            onClick={() => setCurrentStep('basics')}
+            className={`flex-1 py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+              currentStep === 'basics' 
+                ? 'bg-primary text-primary-foreground shadow-lg' 
+                : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+            }`}
+          >
+            1. Basics
+          </button>
+          <button
+            type="button"
+            onClick={() => setCurrentStep('stats')}
+            className={`flex-1 py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+              currentStep === 'stats' 
+                ? 'bg-primary text-primary-foreground shadow-lg' 
+                : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+            }`}
+          >
+            2. Stats
+          </button>
         </div>
 
-        <div className="space-y-6">
-          {/* Name Input */}
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Player Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (errors.name) setErrors({});
-              }}
-              placeholder="Enter player name"
-              className={`bg-white/5 border-white/10 h-12 text-lg font-bold ${errors.name ? 'border-destructive focus-visible:ring-destructive' : 'focus-visible:ring-primary'}`}
-            />
-            {errors.name && (
-              <p className="text-xs font-bold text-destructive mt-1">{errors.name}</p>
-            )}
-          </div>
+        {/* STEP 1: BASICS */}
+        {currentStep === 'basics' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            {/* Avatar Section */}
+            <div className="flex items-center gap-6">
+              <div className="relative group">
+                <div className={`absolute inset-0 rounded-2xl blur-xl bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity`} />
+                <Avatar className={`relative h-24 w-24 border-2 shadow-xl transition-all duration-300 rounded-2xl ${isUnknown ? 'border-white/10 opacity-50' : 'border-primary/30 group-hover:border-primary/50'}`}>
+                  <AvatarImage src={image} alt={name || 'Player'} className="object-cover" />
+                  <AvatarFallback className="bg-gradient-to-br from-white/10 to-black/20 text-3xl font-black rounded-2xl">
+                    {isUnknown ? '?' : (name ? name.substring(0, 2).toUpperCase() : <User className="h-10 w-10" />)}
+                  </AvatarFallback>
+                </Avatar>
+                {image && (
+                  <button
+                    type="button"
+                    onClick={() => setImage('')}
+                    className="absolute -top-2 -right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-all shadow-lg hover:scale-110 z-10"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
 
-          {/* Position Selection */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Position</Label>
-              {/* Auto-detect suggestion */}
-              {!position && detectedPosition && !isUnknown && (
-                <button
-                  type="button"
-                  onClick={() => setPosition(detectedPosition)}
-                  className="flex items-center gap-1.5 text-[10px] font-bold text-primary hover:text-primary/80 transition-colors bg-primary/10 px-2 py-1 rounded-full"
+              <div className="flex-1">
+                <Label
+                  htmlFor="image-upload"
+                  className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all hover:scale-105 font-bold text-xs uppercase tracking-wider"
                 >
-                  <Target className="h-3 w-3" />
-                  Suggested: {detectedPosition}
-                </button>
+                  <Upload className="h-4 w-4" />
+                  {image ? 'Change Photo' : 'Upload Photo'}
+                </Label>
+                <Input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+                <p className="text-[10px] text-muted-foreground mt-2 font-medium">
+                  Optional • JPEG, PNG, WebP
+                </p>
+              </div>
+            </div>
+
+            {/* Name Input */}
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Player Name *</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (errors.name) setErrors({});
+                }}
+                placeholder="e.g., Cristiano Ronaldo"
+                className={`bg-white/5 border-white/10 h-14 text-lg font-bold placeholder:text-muted-foreground/40 ${errors.name ? 'border-destructive focus-visible:ring-destructive' : 'focus-visible:ring-primary'}`}
+              />
+              {errors.name && (
+                <p className="text-xs font-bold text-destructive mt-1 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  {errors.name}
+                </p>
               )}
             </div>
-            <div className="grid grid-cols-4 gap-2">
-              {POSITIONS.map((pos) => (
-                <button
-                  key={pos}
-                  type="button"
-                  onClick={() => setPosition(position === pos ? undefined : pos)}
-                  className={`
-                    relative overflow-hidden p-3 rounded-xl border-2 transition-all duration-200 group
-                    ${position === pos 
-                      ? 'border-current bg-current/10 shadow-[0_0_15px_-5px_currentColor]' 
-                      : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10'
-                    }
-                    ${!position && detectedPosition === pos ? 'ring-1 ring-primary/30 ring-offset-1 ring-offset-black' : ''}
-                  `}
-                  style={{ 
-                    color: position === pos ? POSITION_COLORS[pos] : undefined,
-                    borderColor: position === pos ? POSITION_COLORS[pos] : undefined
-                  }}
-                >
-                  <div className="relative z-10 text-center">
-                    <span className="block text-lg font-black tracking-tight">{pos}</span>
-                    <span className="block text-[9px] font-bold uppercase tracking-wider opacity-60 mt-0.5">
-                      {POSITION_LABELS[pos]}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
 
-          {/* Unknown Stats Toggle */}
-          <div className="flex items-center justify-between p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/[0.07] transition-colors">
-            <div className="space-y-1">
-              <Label className="text-sm font-bold flex items-center gap-2">
-                {isUnknown ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-primary" />}
-                Scouting Mode
-              </Label>
-              <p className="text-xs text-muted-foreground font-medium">
-                Hide stats until fully scouted
-              </p>
+            {/* Position Selection */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Position</Label>
+                {/* Auto-detect suggestion */}
+                {!position && detectedPosition && !isUnknown && (
+                  <button
+                    type="button"
+                    onClick={() => setPosition(detectedPosition)}
+                    className="flex items-center gap-1.5 text-[10px] font-bold text-primary hover:text-primary/80 transition-colors bg-primary/10 px-2 py-1 rounded-full"
+                  >
+                    <Target className="h-3 w-3" />
+                    Suggested: {detectedPosition}
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-4 gap-3">
+                {POSITIONS.map((pos) => (
+                  <button
+                    key={pos}
+                    type="button"
+                    onClick={() => setPosition(position === pos ? undefined : pos)}
+                    className={`
+                      relative overflow-hidden p-4 rounded-xl border-2 transition-all duration-200 group
+                      ${position === pos 
+                        ? 'border-current bg-current/10 shadow-[0_0_20px_-5px_currentColor] scale-105' 
+                        : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 hover:scale-105'
+                      }
+                      ${!position && detectedPosition === pos ? 'ring-2 ring-primary/40 ring-offset-2 ring-offset-black' : ''}
+                    `}
+                    style={{ 
+                      color: position === pos ? POSITION_COLORS[pos] : undefined,
+                      borderColor: position === pos ? POSITION_COLORS[pos] : undefined
+                    }}
+                  >
+                    <div className="relative z-10 text-center">
+                      <span className="block text-xl font-black tracking-tight">{pos}</span>
+                      <span className="block text-[8px] font-bold uppercase tracking-wider opacity-60 mt-1">
+                        {POSITION_LABELS[pos]}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
-            <Switch
-              checked={isUnknown}
-              onCheckedChange={setIsUnknown}
-              className="data-[state=checked]:bg-primary"
-            />
-          </div>
 
-          {!isUnknown && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-300 pt-2">
-              {/* Overall Display */}
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/5 to-black border border-white/10 p-6 text-center group">
-                <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-5 mix-blend-overlay" />
-                <div className="relative z-10">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Overall Rating</p>
-                  <span className={`text-6xl font-black tracking-tighter transition-all duration-300 ${
-                    overall >= 90 ? 'text-yellow-500 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]' :
-                    overall >= 80 ? 'text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]' :
-                    overall >= 70 ? 'text-blue-500 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]' :
-                    'text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+            {/* Unknown Stats Toggle */}
+            <div className="flex items-center justify-between p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/[0.07] transition-colors">
+              <div className="space-y-1">
+                <Label className="text-sm font-bold flex items-center gap-2 cursor-pointer">
+                  {isUnknown ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-primary" />}
+                  Scouting Mode
+                </Label>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Hide stats until fully scouted
+                </p>
+              </div>
+              <Switch
+                checked={isUnknown}
+                onCheckedChange={setIsUnknown}
+                className="data-[state=checked]:bg-primary"
+              />
+            </div>
+
+            {/* Next Button */}
+            {!isUnknown && (
+              <Button
+                type="button"
+                onClick={() => setCurrentStep('stats')}
+                className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
+              >
+                Next: Set Attributes
+                <Zap className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* STEP 2: STATS */}
+        {currentStep === 'stats' && !isUnknown && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            {/* Overall Display */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-black to-black border-2 border-primary/20 p-6 text-center">
+              <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-5 mix-blend-overlay" />
+              <div className="relative z-10 space-y-2">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Overall Rating</p>
+                <div className="flex items-baseline justify-center gap-2">
+                  <span className={`text-7xl font-black tracking-tighter transition-all duration-300 ${
+                    overall >= 90 ? 'text-yellow-400' :
+                    overall >= 80 ? 'text-emerald-400' :
+                    overall >= 70 ? 'text-blue-400' :
+                    'text-foreground'
                   }`}>
                     {overall}
                   </span>
-                  {/* Position-weighted overall */}
                   {positionOverall !== null && positionOverall !== overall && (
-                    <div className="mt-2 flex items-center justify-center gap-2">
-                      <span className="text-xs font-bold text-muted-foreground">{position} Rating:</span>
-                      <span className={`text-lg font-black ${
+                    <div className="text-left">
+                      <span className="text-[10px] font-bold text-muted-foreground block">{position}</span>
+                      <span className={`text-2xl font-black ${
                         positionOverall >= 80 ? 'text-emerald-400' :
                         positionOverall >= 70 ? 'text-blue-400' :
                         'text-muted-foreground'
@@ -292,140 +344,126 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
                   )}
                 </div>
               </div>
+            </div>
 
-              {/* Quick Presets */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-                    <Sparkles className="h-3 w-3" />
-                    Quick Presets
-                  </Label>
-                  <span className="text-[10px] text-muted-foreground font-medium">
-                    {position ? `Tuned for ${position}` : 'General preset'}
-                  </span>
-                </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {PRESET_LEVELS.map(({ key, label, emoji, description }) => (
-                    <Tooltip key={key}>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          onClick={() => handleApplyPreset(key)}
-                          className={`p-2.5 rounded-xl border transition-all duration-200 text-center ${
-                            activePreset === key 
-                              ? 'border-primary bg-primary/10 shadow-[0_0_10px_-3px] shadow-primary/30' 
-                              : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10'
-                          }`}
-                        >
-                          <span className="text-lg block">{emoji}</span>
-                          <span className="text-[10px] font-bold uppercase tracking-wider block mt-0.5">{label}</span>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="bg-black/90 border-white/10 backdrop-blur-xl">
-                        <p className="text-xs font-bold">{description}</p>
-                        {position && <p className="text-[10px] text-muted-foreground mt-0.5">Stats optimized for {POSITION_LABELS[position]}</p>}
-                      </TooltipContent>
-                    </Tooltip>
-                  ))}
-                </div>
+            {/* Quick Presets */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                  Quick Presets
+                </Label>
+                <span className="text-[10px] text-muted-foreground font-medium ml-auto">
+                  {position ? `${position} tuned` : 'General'}
+                </span>
               </div>
-
-              {/* Stat Warnings */}
-              {warnings.length > 0 && (
-                <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-2">
-                  <div className="flex items-center gap-1.5">
-                    <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
-                    <span className="text-xs font-bold text-amber-400">Stat Review</span>
-                  </div>
-                  {warnings.map((w, i) => (
-                    <p key={i} className="text-[11px] text-amber-300/70 pl-5">{w}</p>
-                  ))}
-                </div>
-              )}
-
-              {/* Stats Guide Toggle */}
-              <button
-                type="button"
-                onClick={() => setShowGuide(!showGuide)}
-                className="flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors w-full"
-              >
-                <Info className="h-3.5 w-3.5" />
-                <span>{showGuide ? 'Hide' : 'Show'} stat guide</span>
-              </button>
-
-              {showGuide && (
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">How to Rate Stats (1-99 Scale)</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-red-500" />
-                      <span className="text-[11px]"><b>1-39</b> — Below average</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-orange-500" />
-                      <span className="text-[11px]"><b>40-59</b> — Average</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                      <span className="text-[11px]"><b>60-74</b> — Good</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                      <span className="text-[11px]"><b>75-89</b> — Very good</span>
-                    </div>
-                    <div className="flex items-center gap-2 col-span-2">
-                      <span className="w-2 h-2 rounded-full bg-primary" />
-                      <span className="text-[11px]"><b>90-99</b> — World class (use very sparingly)</span>
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mt-2">
-                    Tip: Be honest with ratings. A 50 is an average player, not bad. Most casual players will be 45-70 overall.
-                  </p>
-                </div>
-              )}
-
-              {/* Stats Sliders */}
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Attributes</Label>
-                  <span className="text-[10px] font-bold text-muted-foreground bg-white/5 px-2 py-1 rounded">1-99</span>
-                </div>
-                <div className="grid gap-7 bg-white/5 p-6 rounded-2xl border border-white/10">
-                  {STAT_KEYS.map((key) => {
-                    const weight = getStatWeight(key);
-                    const importance = getStatImportance(weight);
-                    const importanceColor = getStatImportanceColor(weight);
-                    return (
-                      <div key={key} className="relative">
-                        <StatSlider
-                          statKey={key}
-                          label={STAT_LABELS[key]}
-                          value={stats[key]}
-                          onChange={(value) => handleStatChange(key, value)}
-                          description={STAT_DESCRIPTIONS[key]}
-                        />
-                        {/* Position importance indicator */}
-                        {importance && (
-                          <span className={`absolute top-0 right-12 text-[8px] font-bold uppercase tracking-widest ${importanceColor}`}>
-                            {importance}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="grid grid-cols-4 gap-2">
+                {PRESET_LEVELS.map(({ key, label, emoji, description }) => (
+                  <Tooltip key={key}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyPreset(key)}
+                        className={`p-3 rounded-xl border-2 transition-all duration-200 text-center hover:scale-105 ${
+                          activePreset === key 
+                            ? 'border-primary bg-primary/10 shadow-[0_0_15px_-5px] shadow-primary/50' 
+                            : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
+                        }`}
+                      >
+                        <span className="text-2xl block">{emoji}</span>
+                        <span className="text-[9px] font-bold uppercase tracking-wider block mt-1">{label}</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="bg-black/90 border-white/10 backdrop-blur-xl">
+                      <p className="text-xs font-bold">{description}</p>
+                      {position && <p className="text-[10px] text-muted-foreground mt-0.5">Optimized for {POSITION_LABELS[position]}</p>}
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Actions */}
-        <div className="flex gap-3 pt-4 sticky bottom-0 bg-black/80 backdrop-blur-xl p-4 -mx-6 -mb-6 border-t border-white/10">
-          <Button type="button" variant="ghost" onClick={onCancel} className="flex-1 h-12 font-bold hover:bg-white/10">
+            {/* Stat Warnings */}
+            {warnings.length > 0 && (
+              <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
+                  <span className="text-xs font-bold text-amber-400">Stat Review</span>
+                </div>
+                {warnings.map((w, i) => (
+                  <p key={i} className="text-[11px] text-amber-300/70 pl-5">{w}</p>
+                ))}
+              </div>
+            )}
+
+            {/* Stats Sliders */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Attributes</Label>
+                <Badge variant="outline" className="text-[10px] font-bold bg-white/5 border-white/10">1-99</Badge>
+              </div>
+              <div className="space-y-5 bg-white/5 p-5 rounded-2xl border border-white/10">
+                {STAT_KEYS.map((key) => {
+                  const weight = getStatWeight(key);
+                  const importance = getStatImportance(weight);
+                  const importanceColor = getStatImportanceColor(weight);
+                  return (
+                    <div key={key} className="relative">
+                      {importance && (
+                        <Badge variant="outline" className={`absolute -top-1 right-0 text-[9px] font-bold px-1.5 py-0 h-4 ${importanceColor} bg-black/40 border-current/20 z-10`}>
+                          {importance}
+                        </Badge>
+                      )}
+                      <StatSlider
+                        statKey={key}
+                        label={STAT_LABELS[key]}
+                        value={stats[key]}
+                        onChange={(value) => handleStatChange(key, value)}
+                        description={STAT_DESCRIPTIONS[key]}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Back Button */}
+            <Button
+              type="button"
+              onClick={() => setCurrentStep('basics')}
+              variant="outline"
+              className="w-full h-11 font-bold rounded-xl border-white/10 hover:bg-white/5"
+            >
+              Back to Basics
+            </Button>
+          </div>
+        )}
+
+        {/* Form Actions */}
+        <div className="flex gap-3 pt-4 border-t border-white/10">
+          <Button
+            type="button"
+            onClick={onCancel}
+            variant="outline"
+            className="flex-1 h-12 font-bold rounded-xl border-white/10 hover:bg-white/5"
+          >
             Cancel
           </Button>
-          <Button type="submit" className="flex-1 h-12 font-bold text-base shadow-lg shadow-primary/20">
-            {player ? 'Save Changes' : 'Add Player'}
+          <Button
+            type="submit"
+            className="flex-1 h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
+          >
+            {isEditing ? (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Save Changes
+              </>
+            ) : (
+              <>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Player
+              </>
+            )}
           </Button>
         </div>
       </form>
