@@ -109,13 +109,6 @@ export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain, o
       {...attributes}
       {...listeners}
     >
-      {/* Captain Badge */}
-      {isCaptain && (
-        <div className="absolute -top-2 -right-2 z-10 bg-yellow-500 text-black font-black text-[10px] px-1.5 py-0.5 rounded shadow-lg border border-yellow-400 animate-in zoom-in">
-          C
-        </div>
-      )}
-
       <div className="text-muted-foreground/30 group-hover:text-muted-foreground/50 transition-colors hidden sm:block">
         <GripVertical className="h-4 w-4" />
       </div>
@@ -149,7 +142,7 @@ export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain, o
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         {/* Bench Button */}
         {onBench && (
           <button
@@ -178,6 +171,13 @@ export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain, o
           >
             <div className="h-3 w-3 border-2 border-current rounded-sm font-bold text-[8px] flex items-center justify-center">C</div>
           </button>
+        )}
+
+        {/* Captain Badge - inline so it's never clipped by overflow */}
+        {isCaptain && (
+          <span className="bg-yellow-500 text-black font-black text-[10px] px-1.5 py-0.5 rounded shadow-lg border border-yellow-400 animate-in zoom-in shrink-0">
+            C
+          </span>
         )}
 
         <Badge

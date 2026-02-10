@@ -94,18 +94,13 @@ export function TeamBuilder() {
       const bench = players.filter(p => benchIds.has(p.id) && !assignedIds.has(p.id));
       const benchIdSet = new Set(bench.map(p => p.id));
       
+      // Any player not on a team and not on bench goes to unassigned
       const unassigned = players.filter(p => 
-        !assignedIds.has(p.id) && 
-        !benchIdSet.has(p.id) &&
-        (storedUnassignedIds.includes(p.id) || !storedUnassignedIds.length || !assignedIds.size)
-      );
-      
-      const newPlayers = players.filter(p => 
-        !assignedIds.has(p.id) && !storedUnassignedIds.includes(p.id) && !benchIdSet.has(p.id)
+        !assignedIds.has(p.id) && !benchIdSet.has(p.id)
       );
       
       setTeams(restoredTeams);
-      setUnassignedPlayers([...unassigned, ...newPlayers]);
+      setUnassignedPlayers(unassigned);
       setBenchPlayers(bench);
     } else {
       handleBalanceTeams();
@@ -212,16 +207,16 @@ export function TeamBuilder() {
       );
     }
 
-    // Add to destination
+    // Add to destination (with deduplication guard for rapid handleDragOver calls)
     if (overContainer === 'unassigned') {
-      setUnassignedPlayers((prev) => [...prev, player]);
+      setUnassignedPlayers((prev) => prev.some(p => p.id === player.id) ? prev : [...prev, player]);
     } else if (overContainer === 'bench') {
-      setBenchPlayers((prev) => [...prev, player]);
+      setBenchPlayers((prev) => prev.some(p => p.id === player.id) ? prev : [...prev, player]);
     } else {
       setTeams((prev) =>
         prev.map((team) =>
           team.id === overContainer
-            ? { ...team, players: [...team.players, player] }
+            ? { ...team, players: team.players.some(p => p.id === player.id) ? team.players : [...team.players, player] }
             : team
         )
       );
@@ -281,6 +276,14 @@ export function TeamBuilder() {
     );
   };
 
+  const handleRenameTeam = (teamId: string, newName: string) => {
+    setTeams((prev) =>
+      prev.map((team) =>
+        team.id === teamId ? { ...team, name: newName } : team
+      )
+    );
+  };
+
   const handleMoveToBench = (playerId: string) => {
     const player = findPlayer(playerId);
     if (!player) return;
@@ -302,8 +305,8 @@ export function TeamBuilder() {
       return; // Unknown container, don't proceed
     }
     
-    // Add to bench
-    setBenchPlayers(prev => [...prev, player]);
+    // Add to bench (with dedup guard)
+    setBenchPlayers(prev => prev.some(p => p.id === player.id) ? prev : [...prev, player]);
   };
 
   const handleMoveFromBench = (playerId: string) => {
@@ -311,7 +314,7 @@ export function TeamBuilder() {
     if (!player) return;
     
     setBenchPlayers(prev => prev.filter(p => p.id !== playerId));
-    setUnassignedPlayers(prev => [...prev, player]);
+    setUnassignedPlayers(prev => prev.some(p => p.id === player.id) ? prev : [...prev, player]);
   };
 
   const handleOpenMatchDialog = () => {
@@ -414,6 +417,7 @@ export function TeamBuilder() {
                   side={index === 0 ? 'left' : 'right'}
                   onMakeCaptain={(playerId) => handleMakeCaptain(team.id, playerId)}
                   onBenchPlayer={handleMoveToBench}
+                  onRenameTeam={(newName) => handleRenameTeam(team.id, newName)}
                 />
               </div>
             ))}

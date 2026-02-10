@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useRef, useEffect } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -8,19 +9,41 @@ import {
 import { Team, POSITION_COLORS, PlayerPosition } from '@/lib/types';
 import { calculateTeamOverall, calculateTeamTotalOverall, getTeamPositionBreakdown } from '@/lib/team-balancer';
 import { DraggablePlayer } from './DraggablePlayer';
-import { Shield, Crown } from 'lucide-react';
+import { Shield, Crown, Pencil } from 'lucide-react';
 
 interface PitchViewProps {
   team: Team;
   side: 'left' | 'right';
   onMakeCaptain: (playerId: string) => void;
   onBenchPlayer?: (playerId: string) => void;
+  onRenameTeam?: (newName: string) => void;
 }
 
-export function PitchView({ team, side, onMakeCaptain, onBenchPlayer }: PitchViewProps) {
+export function PitchView({ team, side, onMakeCaptain, onBenchPlayer, onRenameTeam }: PitchViewProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: team.id,
   });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(team.name);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const handleSaveName = () => {
+    const trimmed = editName.trim();
+    if (trimmed && trimmed !== team.name && onRenameTeam) {
+      onRenameTeam(trimmed);
+    } else {
+      setEditName(team.name);
+    }
+    setIsEditing(false);
+  };
 
   const overall = calculateTeamOverall(team.players);
   const totalRating = calculateTeamTotalOverall(team.players);
@@ -64,10 +87,42 @@ export function PitchView({ team, side, onMakeCaptain, onBenchPlayer }: PitchVie
                 <Shield className="h-5 w-5 fill-current" />
               </div>
               <div>
-                <h3 className="font-black text-lg uppercase tracking-tight leading-none mb-1" style={{ color: team.color }}>
-                  {team.name}
-                </h3>
-                <div className="flex gap-1">
+                {isEditing ? (
+                  <input
+                    ref={inputRef}
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onBlur={handleSaveName}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveName();
+                      if (e.key === 'Escape') {
+                        setEditName(team.name);
+                        setIsEditing(false);
+                      }
+                    }}
+                    className="font-black text-lg uppercase tracking-tight leading-none bg-transparent border-b-2 outline-none px-0 py-0.5 w-full max-w-[180px]"
+                    style={{ color: team.color, borderColor: team.color }}
+                    maxLength={20}
+                  />
+                ) : (
+                  <h3
+                    className="font-black text-lg uppercase tracking-tight leading-none mb-1 cursor-pointer flex items-center gap-2"
+                    style={{ color: team.color }}
+                    onClick={() => {
+                      if (onRenameTeam) {
+                        setEditName(team.name);
+                        setIsEditing(true);
+                      }
+                    }}
+                    title="Click to rename"
+                  >
+                    {team.name}
+                    {onRenameTeam && (
+                      <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+                    )}
+                  </h3>
+                )}
+                <div className="flex gap-1 mt-1">
                   {(['GK', 'DEF', 'MID', 'ATT'] as PlayerPosition[]).map(pos => positionBreakdown[pos] > 0 && (
                     <span key={pos} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/5 text-muted-foreground border border-white/5">
                       {positionBreakdown[pos]} {pos}
