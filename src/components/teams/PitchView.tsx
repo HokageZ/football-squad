@@ -6,7 +6,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { Team, POSITION_COLORS, PlayerPosition } from '@/lib/types';
-import { calculateTeamOverall, getTeamPositionBreakdown } from '@/lib/team-balancer';
+import { calculateTeamOverall, calculateTeamTotalOverall, getTeamPositionBreakdown } from '@/lib/team-balancer';
 import { DraggablePlayer } from './DraggablePlayer';
 import { Shield, Crown } from 'lucide-react';
 
@@ -14,14 +14,16 @@ interface PitchViewProps {
   team: Team;
   side: 'left' | 'right';
   onMakeCaptain: (playerId: string) => void;
+  onBenchPlayer?: (playerId: string) => void;
 }
 
-export function PitchView({ team, side, onMakeCaptain }: PitchViewProps) {
+export function PitchView({ team, side, onMakeCaptain, onBenchPlayer }: PitchViewProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: team.id,
   });
 
   const overall = calculateTeamOverall(team.players);
+  const totalRating = calculateTeamTotalOverall(team.players);
   const positionBreakdown = getTeamPositionBreakdown(team.players);
 
   return (
@@ -79,7 +81,8 @@ export function PitchView({ team, side, onMakeCaptain }: PitchViewProps) {
               <div className="text-3xl font-black italic leading-none" style={{ color: team.color }}>
                 {overall}
               </div>
-              <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Rating</div>
+              <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">AVG</div>
+              <div className="text-xs font-bold text-muted-foreground mt-0.5">Total: {totalRating}</div>
             </div>
           </div>
         </div>
@@ -105,6 +108,7 @@ export function PitchView({ team, side, onMakeCaptain }: PitchViewProps) {
                   teamColor={team.color}
                   isCaptain={team.captainId === player.id}
                   onMakeCaptain={() => onMakeCaptain(player.id)}
+                  onBench={onBenchPlayer ? () => onBenchPlayer(player.id) : undefined}
                 />
               ))
             )}

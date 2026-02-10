@@ -11,16 +11,17 @@ import {
   useSensor,
   useSensors,
   closestCenter,
+  useDroppable,
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { Shuffle, RotateCcw, Users, Shirt, Trophy, Save, CalendarIcon } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Shuffle, RotateCcw, Users, Shirt, Trophy, CalendarIcon, Shield, Ban, ArrowRight, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Dialog,
   DialogContent,
@@ -37,9 +38,9 @@ import {
 import { format } from 'date-fns';
 import { usePlayers } from '@/context/PlayerContext';
 import { useMatches } from '@/context/MatchContext';
-import { Player, Team } from '@/lib/types';
-import { balanceTeams, randomizeTeams, calculateTeamOverall } from '@/lib/team-balancer';
-import { getStoredTeams, setStoredTeams, getStoredUnassigned, setStoredUnassigned } from '@/lib/storage';
+import { Player, Team, POSITION_COLORS } from '@/lib/types';
+import { balanceTeams, randomizeTeams, calculateTeamOverall, calculateOverall, calculateTeamTotalOverall } from '@/lib/team-balancer';
+import { getStoredTeams, setStoredTeams, getStoredUnassigned, setStoredUnassigned, getStoredBench, setStoredBench } from '@/lib/storage';
 import { PitchView } from './PitchView';
 import { DraggablePlayer } from './DraggablePlayer';
 
@@ -49,6 +50,7 @@ export function TeamBuilder() {
   const router = useRouter();
   const [teams, setTeams] = useState<Team[]>([]);
   const [unassignedPlayers, setUnassignedPlayers] = useState<Player[]>([]);
+  const [benchPlayers, setBenchPlayers] = useState<Player[]>([]);
   const [activePlayer, setActivePlayer] = useState<Player | null>(null);
   const [showMatchDialog, setShowMatchDialog] = useState(false);
   const [matchDate, setMatchDate] = useState<Date | undefined>(undefined);
@@ -67,18 +69,17 @@ export function TeamBuilder() {
     if (players.length === 0) {
       setTeams([]);
       setUnassignedPlayers([]);
+      setBenchPlayers([]);
       return;
     }
 
     const storedTeams = getStoredTeams();
     const storedUnassignedIds = getStoredUnassigned();
+    const storedBenchIds = getStoredBench();
     
-    // If we have stored teams, restore them
     if (storedTeams.length > 0) {
-      // Get all player IDs currently in the roster
       const currentPlayerIds = new Set(players.map(p => p.id));
       
-      // Rebuild teams with only existing players (updates player data)
       const restoredTeams = storedTeams.map(team => ({
         ...team,
         players: team.players
@@ -86,27 +87,30 @@ export function TeamBuilder() {
           .map(p => players.find(player => player.id === p.id)!)
       }));
       
-      // Get IDs of players already in teams
       const assignedIds = new Set(restoredTeams.flatMap(t => t.players.map(p => p.id)));
+      const benchIds = new Set(storedBenchIds);
       
-      // Unassigned = stored unassigned (if still exist) + any new players
+      // Restore bench players
+      const bench = players.filter(p => benchIds.has(p.id) && !assignedIds.has(p.id));
+      const benchIdSet = new Set(bench.map(p => p.id));
+      
       const unassigned = players.filter(p => 
         !assignedIds.has(p.id) && 
+        !benchIdSet.has(p.id) &&
         (storedUnassignedIds.includes(p.id) || !storedUnassignedIds.length || !assignedIds.size)
       );
       
-      // Also add any new players not in stored data
       const newPlayers = players.filter(p => 
-        !assignedIds.has(p.id) && !storedUnassignedIds.includes(p.id)
+        !assignedIds.has(p.id) && !storedUnassignedIds.includes(p.id) && !benchIdSet.has(p.id)
       );
       
       setTeams(restoredTeams);
       setUnassignedPlayers([...unassigned, ...newPlayers]);
+      setBenchPlayers(bench);
     } else {
-      // No stored teams - initialize with balanced teams
       handleBalanceTeams();
     }
-  }, [players.length]); // Only run when player count changes
+  }, [players.length]);
 
   // Persist teams whenever they change
   useEffect(() => {
@@ -115,39 +119,44 @@ export function TeamBuilder() {
     }
   }, [teams]);
 
-  // Persist unassigned players whenever they change
   useEffect(() => {
     setStoredUnassigned(unassignedPlayers.map(p => p.id));
   }, [unassignedPlayers]);
 
+  useEffect(() => {
+    setStoredBench(benchPlayers.map(p => p.id));
+  }, [benchPlayers]);
+
+  const benchPlayerIds = benchPlayers.map(p => p.id);
+
   const handleBalanceTeams = useCallback(() => {
-    const balanced = balanceTeams(players, 2);
+    const benchIds = benchPlayers.map(p => p.id);
+    const balanced = balanceTeams(players, 2, true, benchIds);
     setTeams(balanced);
     setUnassignedPlayers([]);
-  }, [players]);
+  }, [players, benchPlayers]);
 
   const handleRandomizeTeams = useCallback(() => {
-    const randomized = randomizeTeams(players, 2);
+    const benchIds = benchPlayers.map(p => p.id);
+    const randomized = randomizeTeams(players, 2, benchIds);
     setTeams(randomized);
     setUnassignedPlayers([]);
-  }, [players]);
+  }, [players, benchPlayers]);
 
   const handleResetTeams = useCallback(() => {
     setTeams([
       { id: 'team-0', name: 'Team Red', color: '#ef4444', players: [] },
       { id: 'team-1', name: 'Team Blue', color: '#3b82f6', players: [] },
     ]);
-    setUnassignedPlayers([...players]);
-  }, [players]);
+    const nonBenched = players.filter(p => !benchPlayers.find(bp => bp.id === p.id));
+    setUnassignedPlayers(nonBenched);
+  }, [players, benchPlayers]);
 
   const findPlayerContainer = (playerId: string): string | null => {
-    if (unassignedPlayers.find((p) => p.id === playerId)) {
-      return 'unassigned';
-    }
+    if (unassignedPlayers.find((p) => p.id === playerId)) return 'unassigned';
+    if (benchPlayers.find((p) => p.id === playerId)) return 'bench';
     for (const team of teams) {
-      if (team.players.find((p) => p.id === playerId)) {
-        return team.id;
-      }
+      if (team.players.find((p) => p.id === playerId)) return team.id;
     }
     return null;
   };
@@ -155,7 +164,8 @@ export function TeamBuilder() {
   const findPlayer = (playerId: string): Player | null => {
     const unassigned = unassignedPlayers.find((p) => p.id === playerId);
     if (unassigned) return unassigned;
-
+    const benched = benchPlayers.find((p) => p.id === playerId);
+    if (benched) return benched;
     for (const team of teams) {
       const player = team.players.find((p) => p.id === playerId);
       if (player) return player;
@@ -178,22 +188,20 @@ export function TeamBuilder() {
     const activeContainer = findPlayerContainer(activeId);
     let overContainer = findPlayerContainer(overId);
 
-    // Check if dragging over a team container directly
-    if (teams.find((t) => t.id === overId) || overId === 'unassigned') {
+    if (teams.find((t) => t.id === overId) || overId === 'unassigned' || overId === 'bench') {
       overContainer = overId;
     }
 
-    if (!activeContainer || !overContainer || activeContainer === overContainer) {
-      return;
-    }
+    if (!activeContainer || !overContainer || activeContainer === overContainer) return;
 
-    // Move player between containers
     const player = findPlayer(activeId);
     if (!player) return;
 
     // Remove from source
     if (activeContainer === 'unassigned') {
       setUnassignedPlayers((prev) => prev.filter((p) => p.id !== activeId));
+    } else if (activeContainer === 'bench') {
+      setBenchPlayers((prev) => prev.filter((p) => p.id !== activeId));
     } else {
       setTeams((prev) =>
         prev.map((team) =>
@@ -207,6 +215,8 @@ export function TeamBuilder() {
     // Add to destination
     if (overContainer === 'unassigned') {
       setUnassignedPlayers((prev) => [...prev, player]);
+    } else if (overContainer === 'bench') {
+      setBenchPlayers((prev) => [...prev, player]);
     } else {
       setTeams((prev) =>
         prev.map((team) =>
@@ -232,10 +242,15 @@ export function TeamBuilder() {
 
     if (!activeContainer || !overContainer) return;
 
-    // Reorder within same container
     if (activeContainer === overContainer && activeId !== overId) {
       if (activeContainer === 'unassigned') {
         setUnassignedPlayers((prev) => {
+          const oldIndex = prev.findIndex((p) => p.id === activeId);
+          const newIndex = prev.findIndex((p) => p.id === overId);
+          return arrayMove(prev, oldIndex, newIndex);
+        });
+      } else if (activeContainer === 'bench') {
+        setBenchPlayers((prev) => {
           const oldIndex = prev.findIndex((p) => p.id === activeId);
           const newIndex = prev.findIndex((p) => p.id === overId);
           return arrayMove(prev, oldIndex, newIndex);
@@ -261,16 +276,42 @@ export function TeamBuilder() {
   const handleMakeCaptain = (teamId: string, playerId: string) => {
     setTeams((prev) =>
       prev.map((team) =>
-        team.id === teamId
-          ? { ...team, captainId: playerId }
-          : team
+        team.id === teamId ? { ...team, captainId: playerId } : team
       )
     );
   };
 
+  const handleMoveToBench = (playerId: string) => {
+    const player = findPlayer(playerId);
+    if (!player) return;
+    
+    const container = findPlayerContainer(playerId);
+    if (container === 'bench') return;
+    
+    // Remove from current container
+    if (container === 'unassigned') {
+      setUnassignedPlayers(prev => prev.filter(p => p.id !== playerId));
+    } else {
+      setTeams(prev => prev.map(team => ({
+        ...team,
+        players: team.players.filter(p => p.id !== playerId)
+      })));
+    }
+    
+    // Add to bench
+    setBenchPlayers(prev => [...prev, player]);
+  };
+
+  const handleMoveFromBench = (playerId: string) => {
+    const player = benchPlayers.find(p => p.id === playerId);
+    if (!player) return;
+    
+    setBenchPlayers(prev => prev.filter(p => p.id !== playerId));
+    setUnassignedPlayers(prev => [...prev, player]);
+  };
+
   const handleOpenMatchDialog = () => {
     if (teams.length < 2) return;
-    // Set default date/time to now
     const now = new Date();
     setMatchDate(now);
     setMatchTime(now.toTimeString().slice(0, 5));
@@ -280,21 +321,22 @@ export function TeamBuilder() {
   const handleCreateMatch = () => {
     if (teams.length < 2 || !matchDate || !matchTime) return;
 
-    // Combine date and time
     const [hours, minutes] = matchTime.split(':').map(Number);
     const dateTime = new Date(matchDate);
     dateTime.setHours(hours, minutes, 0, 0);
 
-    // Create a match with current teams
-    addMatch(teams[0], teams[1], dateTime.toISOString());
+    addMatch(teams[0], teams[1], dateTime.toISOString(), benchPlayers.length > 0 ? benchPlayers : undefined);
 
     setShowMatchDialog(false);
-    // Redirect to matches page
     router.push('/matches');
   };
 
   const teamDifference = teams.length === 2
     ? Math.abs(calculateTeamOverall(teams[0].players) - calculateTeamOverall(teams[1].players))
+    : 0;
+
+  const totalDifference = teams.length === 2
+    ? Math.abs(calculateTeamTotalOverall(teams[0].players) - calculateTeamTotalOverall(teams[1].players))
     : 0;
 
   if (players.length === 0) {
@@ -347,10 +389,12 @@ export function TeamBuilder() {
               variant="outline"
               className={`text-sm font-black px-3 py-1 border ${teamDifference <= 1
                   ? 'border-emerald-500/50 text-emerald-400 bg-emerald-500/10 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
+                  : teamDifference <= 3
+                  ? 'border-yellow-500/50 text-yellow-400 bg-yellow-500/10'
                   : 'border-rose-500/50 text-rose-400 bg-rose-500/10 shadow-[0_0_10px_rgba(244,63,94,0.2)]'
                 }`}
             >
-              DIFF: {teamDifference.toFixed(1)}
+              AVG: {teamDifference.toFixed(1)} | TOT: {totalDifference}
             </Badge>
           </div>
         </div>
@@ -359,19 +403,54 @@ export function TeamBuilder() {
         <div className="relative p-1 rounded-[2.5rem] bg-gradient-to-b from-white/10 to-white/5 border border-white/10 shadow-2xl">
           <div className="absolute inset-0 bg-[url('/pitch-pattern.svg')] opacity-5 rounded-[2.5rem]" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-1 min-h-[600px]">
-{teams.map((team, index) => (
-                <div key={team.id} className="h-full">
-                  <PitchView
-                    team={team}
-                    side={index === 0 ? 'left' : 'right'}
-                    onMakeCaptain={(playerId) => handleMakeCaptain(team.id, playerId)}
-                  />
-                </div>
-              ))}
+            {teams.map((team, index) => (
+              <div key={team.id} className="h-full">
+                <PitchView
+                  team={team}
+                  side={index === 0 ? 'left' : 'right'}
+                  onMakeCaptain={(playerId) => handleMakeCaptain(team.id, playerId)}
+                  onBenchPlayer={handleMoveToBench}
+                />
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Bench (Unassigned Players) */}
+        {/* Bench (Players not playing) */}
+        <Card className="glass p-6 border-white/10 bg-black/40 backdrop-blur-xl border-l-4 border-l-amber-500/50">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <Ban className="h-5 w-5 text-amber-500" />
+            </div>
+            <div>
+              <h3 className="font-black uppercase tracking-widest text-sm text-amber-400">Bench</h3>
+              <p className="text-xs text-muted-foreground font-medium">Players not playing — excluded from auto-balance</p>
+            </div>
+            <Badge variant="secondary" className="ml-auto text-xs font-bold bg-amber-500/10 text-amber-400 border-amber-500/20">
+              {benchPlayers.length} Benched
+            </Badge>
+          </div>
+          {benchPlayers.length === 0 ? (
+            <BenchDropZone />
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {benchPlayers.map((player) => (
+                <div key={player.id} className="relative group">
+                  <DraggablePlayer player={player} />
+                  <button
+                    onClick={() => handleMoveFromBench(player.id)}
+                    className="absolute -top-1 -right-1 z-10 bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-emerald-400"
+                    title="Move to reserves"
+                  >
+                    <ArrowRight className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* Reserves (Unassigned Players) */}
         {unassignedPlayers.length > 0 && (
           <Card className="glass p-6 border-white/10 bg-black/40 backdrop-blur-xl">
             <div className="flex items-center gap-3 mb-6">
@@ -380,7 +459,7 @@ export function TeamBuilder() {
               </div>
               <div>
                 <h3 className="font-black uppercase tracking-widest text-sm">Reserves</h3>
-                <p className="text-xs text-muted-foreground font-medium">Drag players to the pitch</p>
+                <p className="text-xs text-muted-foreground font-medium">Drag to pitch or bench</p>
               </div>
               <Badge variant="secondary" className="ml-auto text-xs font-bold bg-white/10 text-white border-white/5">
                 {unassignedPlayers.length} Available
@@ -388,7 +467,16 @@ export function TeamBuilder() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {unassignedPlayers.map((player) => (
-                <DraggablePlayer key={player.id} player={player} />
+                <div key={player.id} className="relative group">
+                  <DraggablePlayer player={player} />
+                  <button
+                    onClick={() => handleMoveToBench(player.id)}
+                    className="absolute -top-1 -right-1 z-10 bg-amber-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-400"
+                    title="Move to bench"
+                  >
+                    <Ban className="h-3 w-3" />
+                  </button>
+                </div>
               ))}
             </div>
           </Card>
@@ -404,84 +492,180 @@ export function TeamBuilder() {
         )}
       </DragOverlay>
 
-      {/* Match Creation Dialog */}
+      {/* Enhanced Match Creation Dialog */}
       <Dialog open={showMatchDialog} onOpenChange={setShowMatchDialog}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5 text-primary" />
-              Schedule Match
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-black/95 border-white/10 backdrop-blur-2xl p-0 gap-0">
+          {/* Match Poster Header */}
+          <div className="relative overflow-hidden p-8 border-b border-white/10">
+            <div className="absolute inset-0 bg-gradient-to-r from-red-900/20 via-black/40 to-blue-900/20" />
+            <div className="absolute inset-0 bg-[url('/pitch-pattern.svg')] opacity-5" />
+            
+            <div className="relative z-10 text-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-primary text-[10px] font-bold tracking-widest uppercase mb-4">
+                <Trophy className="h-3 w-3" />
+                Match Day
+              </div>
+              
+              <div className="flex items-center justify-center gap-8 mb-4">
+                {/* Team A */}
+                <div className="flex-1 text-right">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-2" style={{ backgroundColor: `${teams[0]?.color}20` }}>
+                    <Shield className="h-8 w-8" style={{ color: teams[0]?.color }} />
+                  </div>
+                  <h3 className="text-xl font-black uppercase tracking-tight" style={{ color: teams[0]?.color }}>
+                    {teams[0]?.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground font-bold">{teams[0]?.players.length} Players</p>
+                </div>
 
-          <div className="space-y-4 py-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
-              <span className="font-bold" style={{ color: teams[0]?.color }}>{teams[0]?.name}</span>
-              <span className="text-muted-foreground font-bold">VS</span>
-              <span className="font-bold" style={{ color: teams[1]?.color }}>{teams[1]?.name}</span>
+                {/* VS */}
+                <div className="px-6 py-3 bg-white/5 rounded-2xl border border-white/10">
+                  <span className="text-3xl font-black text-white/30">VS</span>
+                </div>
+
+                {/* Team B */}
+                <div className="flex-1 text-left">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-2" style={{ backgroundColor: `${teams[1]?.color}20` }}>
+                    <Shield className="h-8 w-8" style={{ color: teams[1]?.color }} />
+                  </div>
+                  <h3 className="text-xl font-black uppercase tracking-tight" style={{ color: teams[1]?.color }}>
+                    {teams[1]?.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground font-bold">{teams[1]?.players.length} Players</p>
+                </div>
+              </div>
             </div>
+          </div>
 
-            {/* Date Picker */}
-            <div className="space-y-2">
-              <Label>Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal bg-white/5 border-white/10 hover:bg-white/10"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {matchDate ? format(matchDate, 'EEEE, MMMM d, yyyy') : 'Pick a date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-background border-white/10" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={matchDate}
-                    onSelect={setMatchDate}
-                    initialFocus
+          {/* Team Lineups */}
+          <div className="grid grid-cols-2 gap-4 p-6 border-b border-white/10">
+            {teams.slice(0, 2).map((team) => (
+              <div key={team.id}>
+                <h4 className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: team.color }}>
+                  Lineup
+                </h4>
+                <div className="space-y-1.5">
+                  {team.players.map((player, i) => (
+                    <div key={player.id} className="flex items-center gap-2 p-1.5 rounded-lg bg-white/5 border border-white/5">
+                      <span className="text-[10px] font-bold text-muted-foreground w-4 text-center">{i + 1}</span>
+                      <Avatar className="h-6 w-6 border border-white/10">
+                        <AvatarImage src={player.image} />
+                        <AvatarFallback className="text-[9px] font-bold bg-white/5">
+                          {player.name.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs font-bold truncate flex-1">{player.name}</span>
+                      {player.position && (
+                        <span className="text-[9px] font-bold px-1 py-0.5 rounded" style={{ color: POSITION_COLORS[player.position], backgroundColor: `${POSITION_COLORS[player.position]}15` }}>
+                          {player.position}
+                        </span>
+                      )}
+                      <span className="text-[10px] font-mono font-bold text-muted-foreground">{calculateOverall(player.stats)}</span>
+                      {team.captainId === player.id && (
+                        <span className="text-[9px] font-black text-yellow-500 bg-yellow-500/10 px-1 rounded">C</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bench Players in dialog */}
+          {benchPlayers.length > 0 && (
+            <div className="px-6 py-3 border-b border-white/10 bg-amber-500/5">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-amber-400 mb-2 flex items-center gap-1.5">
+                <Ban className="h-3 w-3" /> Bench ({benchPlayers.length})
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {benchPlayers.map(p => (
+                  <span key={p.id} className="text-[11px] font-bold text-amber-300/70 bg-amber-500/10 px-2 py-1 rounded-full border border-amber-500/10">
+                    {p.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Date/Time Picker */}
+          <div className="p-6 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-left font-bold bg-white/5 border-white/10 hover:bg-white/10 h-12"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4 text-primary" />
+                      {matchDate ? format(matchDate, 'EEE, MMM d') : 'Pick a date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 bg-background border-white/10" align="start">
+                    <Calendar mode="single" selected={matchDate} onSelect={setMatchDate} initialFocus />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Kick-off</Label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+                  <Input
+                    type="time"
+                    value={matchTime}
+                    onChange={(e) => setMatchTime(e.target.value)}
+                    className="bg-white/5 border-white/10 h-12 pl-10 font-bold"
                   />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Time Picker */}
-            <div className="space-y-2">
-              <Label htmlFor="match-time">Time</Label>
-              <Input
-                id="match-time"
-                type="time"
-                value={matchTime}
-                onChange={(e) => setMatchTime(e.target.value)}
-                className="bg-white/5 border-white/10"
-              />
+                </div>
+              </div>
             </div>
 
             {matchDate && matchTime && (
-              <div className="text-center p-3 rounded-lg bg-primary/10 border border-primary/20">
-                <span className="text-sm font-bold text-primary">
+              <div className="text-center p-4 rounded-xl bg-primary/5 border border-primary/20">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Kick-off</p>
+                <span className="text-lg font-black text-primary">
                   {format(matchDate, 'EEEE, MMMM d')} at {matchTime}
                 </span>
               </div>
             )}
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={() => setShowMatchDialog(false)}>
+          <DialogFooter className="p-6 pt-0 gap-2">
+            <Button variant="ghost" onClick={() => setShowMatchDialog(false)} className="font-bold">
               Cancel
             </Button>
             <Button
               onClick={handleCreateMatch}
-              className="bg-emerald-500 hover:bg-emerald-600 text-white"
+              className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold px-8 shadow-lg"
               disabled={!matchDate || !matchTime}
             >
               <Trophy className="h-4 w-4 mr-2" />
-              Create Match
+              Confirm & Create Match
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </DndContext>
+  );
+}
+
+// Bench Drop Zone component
+function BenchDropZone() {
+  const { setNodeRef, isOver } = useDroppable({ id: 'bench' });
+  
+  return (
+    <div
+      ref={setNodeRef}
+      className={`
+        py-8 flex flex-col items-center justify-center text-muted-foreground/40 border-2 border-dashed rounded-2xl transition-all
+        ${isOver ? 'border-amber-500/50 bg-amber-500/5 text-amber-500/50' : 'border-white/5'}
+      `}
+    >
+      <Ban className="h-8 w-8 mb-2 opacity-50" />
+      <p className="text-xs font-bold uppercase tracking-widest">Drag players here to bench them</p>
+    </div>
   );
 }
 

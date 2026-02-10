@@ -2,7 +2,7 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Zap, Target, Sparkles, Shield, Dumbbell, ArrowRight } from 'lucide-react';
+import { GripVertical, Zap, Target, Sparkles, Shield, Dumbbell, ArrowRight, Ban } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -18,9 +18,10 @@ interface DraggablePlayerProps {
   teamColor?: string;
   isCaptain?: boolean;
   onMakeCaptain?: () => void;
+  onBench?: () => void;
 }
 
-export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain }: DraggablePlayerProps) {
+export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain, onBench }: DraggablePlayerProps) {
   const {
     attributes,
     listeners,
@@ -149,6 +150,21 @@ export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain }:
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Bench Button */}
+        {onBench && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onBench();
+            }}
+            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-amber-500/20 rounded text-muted-foreground hover:text-amber-500 transition-all"
+            title="Move to bench"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <Ban className="h-3 w-3" />
+          </button>
+        )}
+
         {/* Captain Button (Only visible on hover if in a team) */}
         {onMakeCaptain && !isCaptain && (
           <button
