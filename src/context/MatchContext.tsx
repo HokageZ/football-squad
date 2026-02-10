@@ -8,16 +8,26 @@ import {
   useCallback,
   ReactNode,
 } from 'react';
-import { Match, Team } from '@/lib/types';
+import { Match, Team, Player } from '@/lib/types';
 import { getStoredMatches, setStoredMatches, generateId } from '@/lib/storage';
+import {
+  scheduleMatchNotification,
+  cancelMatchNotification,
+  rescheduleAllNotifications,
+  registerServiceWorker,
+  requestNotificationPermission,
+  getNotificationPermission,
+} from '@/lib/notifications';
 
 interface MatchContextType {
   matches: Match[];
   isLoading: boolean;
-  addMatch: (teamA: Team, teamB: Team, date: string) => Match;
+  notificationPermission: NotificationPermission | 'unsupported';
+  addMatch: (teamA: Team, teamB: Team, date: string, bench?: Player[]) => Match;
   updateMatch: (id: string, updates: Partial<Match>) => void;
   deleteMatch: (id: string) => void;
   getMatch: (id: string) => Match | undefined;
+  requestNotifications: () => Promise<boolean>;
 }
 
 const MatchContext = createContext<MatchContextType | null>(null);
@@ -25,11 +35,23 @@ const MatchContext = createContext<MatchContextType | null>(null);
 export function MatchProvider({ children }: { children: ReactNode }) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>('default');
 
   useEffect(() => {
     const stored = getStoredMatches();
     setMatches(stored);
     setIsLoading(false);
+
+    // Register service worker
+    registerServiceWorker();
+
+    // Check notification permission
+    setNotificationPermission(getNotificationPermission());
+
+    // Re-schedule pending notifications
+    if (stored.length > 0) {
+      rescheduleAllNotifications(stored);
+    }
   }, []);
 
   useEffect(() => {
@@ -38,17 +60,34 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     }
   }, [matches, isLoading]);
 
+  const requestNotifications = useCallback(async (): Promise<boolean> => {
+    const granted = await requestNotificationPermission();
+    setNotificationPermission(granted ? 'granted' : 'denied');
+    if (granted) {
+      // Schedule notifications for all upcoming matches
+      matches
+        .filter(m => m.status === 'scheduled')
+        .forEach(m => scheduleMatchNotification(m));
+    }
+    return granted;
+  }, [matches]);
+
   const addMatch = useCallback(
-    (teamA: Team, teamB: Team, date: string): Match => {
+    (teamA: Team, teamB: Team, date: string, bench?: Player[]): Match => {
       const newMatch: Match = {
         id: generateId(),
         date,
         teamA,
         teamB,
+        bench,
         status: 'scheduled',
       };
 
       setMatches((prev) => [newMatch, ...prev]);
+
+      // Schedule notification
+      scheduleMatchNotification(newMatch);
+
       return newMatch;
     },
     []
@@ -66,6 +105,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   );
 
   const deleteMatch = useCallback((id: string): void => {
+    cancelMatchNotification(id);
     setMatches((prev) => prev.filter((match) => match.id !== id));
   }, []);
 
@@ -81,10 +121,12 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       value={{
         matches,
         isLoading,
+        notificationPermission,
         addMatch,
         updateMatch,
         deleteMatch,
         getMatch,
+        requestNotifications,
       }}
     >
       {children}
