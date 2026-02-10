@@ -13,7 +13,7 @@ import {
   closestCenter,
   useDroppable,
 } from '@dnd-kit/core';
-import { arrayMove } from '@dnd-kit/sortable';
+import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Shuffle, RotateCcw, Users, Shirt, Trophy, CalendarIcon, Shield, Ban, ArrowRight, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -421,69 +421,17 @@ export function TeamBuilder() {
         </div>
 
         {/* Bench (Players not playing) */}
-        <Card className="glass p-6 border-white/10 bg-black/40 backdrop-blur-xl border-l-4 border-l-amber-500/50">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <Ban className="h-5 w-5 text-amber-500" />
-            </div>
-            <div>
-              <h3 className="font-black uppercase tracking-widest text-sm text-amber-400">Bench</h3>
-              <p className="text-xs text-muted-foreground font-medium">Players not playing — excluded from auto-balance</p>
-            </div>
-            <Badge variant="secondary" className="ml-auto text-xs font-bold bg-amber-500/10 text-amber-400 border-amber-500/20">
-              {benchPlayers.length} Benched
-            </Badge>
-          </div>
-          {benchPlayers.length === 0 ? (
-            <BenchDropZone />
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {benchPlayers.map((player) => (
-                <div key={player.id} className="relative group">
-                  <DraggablePlayer player={player} />
-                  <button
-                    onClick={() => handleMoveFromBench(player.id)}
-                    className="absolute -top-1 -right-1 z-10 bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-emerald-400"
-                    title="Move to reserves"
-                  >
-                    <ArrowRight className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
+        <BenchArea 
+          players={benchPlayers} 
+          onMoveFromBench={handleMoveFromBench}
+        />
 
         {/* Reserves (Unassigned Players) */}
         {unassignedPlayers.length > 0 && (
-          <Card className="glass p-6 border-white/10 bg-black/40 backdrop-blur-xl">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 rounded-lg bg-white/5 border border-white/10">
-                <Shirt className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div>
-                <h3 className="font-black uppercase tracking-widest text-sm">Reserves</h3>
-                <p className="text-xs text-muted-foreground font-medium">Drag to pitch or bench</p>
-              </div>
-              <Badge variant="secondary" className="ml-auto text-xs font-bold bg-white/10 text-white border-white/5">
-                {unassignedPlayers.length} Available
-              </Badge>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {unassignedPlayers.map((player) => (
-                <div key={player.id} className="relative group">
-                  <DraggablePlayer player={player} />
-                  <button
-                    onClick={() => handleMoveToBench(player.id)}
-                    className="absolute -top-1 -right-1 z-10 bg-amber-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-400"
-                    title="Move to bench"
-                  >
-                    <Ban className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </Card>
+          <UnassignedArea 
+            players={unassignedPlayers}
+            onMoveToBench={handleMoveToBench}
+          />
         )}
       </div>
 
@@ -655,21 +603,114 @@ export function TeamBuilder() {
   );
 }
 
-// Bench Drop Zone component
-function BenchDropZone() {
+// Unassigned Area component
+interface UnassignedAreaProps {
+  players: Player[];
+  onMoveToBench: (playerId: string) => void;
+}
+
+function UnassignedArea({ players, onMoveToBench }: UnassignedAreaProps) {
+  const { setNodeRef, isOver } = useDroppable({ id: 'unassigned' });
+  
+  return (
+    <Card className="glass p-6 border-white/10 bg-black/40 backdrop-blur-xl">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 rounded-lg bg-white/5 border border-white/10">
+          <Shirt className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <div>
+          <h3 className="font-black uppercase tracking-widest text-sm">Reserves</h3>
+          <p className="text-xs text-muted-foreground font-medium">Drag to pitch or bench</p>
+        </div>
+        <Badge variant="secondary" className="ml-auto text-xs font-bold bg-white/10 text-white border-white/5">
+          {players.length} Available
+        </Badge>
+      </div>
+      
+      <div
+        ref={setNodeRef}
+        className={`transition-all ${isOver ? 'bg-white/5 rounded-2xl p-2' : ''}`}
+      >
+        <SortableContext
+          items={players.map((p) => p.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {players.map((player) => (
+              <div key={player.id} className="relative group">
+                <DraggablePlayer player={player} />
+                <button
+                  onClick={() => onMoveToBench(player.id)}
+                  className="absolute -top-1 -right-1 z-10 bg-amber-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-400"
+                  title="Move to bench"
+                >
+                  <Ban className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </SortableContext>
+      </div>
+    </Card>
+  );
+}
+
+// Bench Area component
+interface BenchAreaProps {
+  players: Player[];
+  onMoveFromBench: (playerId: string) => void;
+}
+
+function BenchArea({ players, onMoveFromBench }: BenchAreaProps) {
   const { setNodeRef, isOver } = useDroppable({ id: 'bench' });
   
   return (
-    <div
-      ref={setNodeRef}
-      className={`
-        py-8 flex flex-col items-center justify-center text-muted-foreground/40 border-2 border-dashed rounded-2xl transition-all
-        ${isOver ? 'border-amber-500/50 bg-amber-500/5 text-amber-500/50' : 'border-white/5'}
-      `}
-    >
-      <Ban className="h-8 w-8 mb-2 opacity-50" />
-      <p className="text-xs font-bold uppercase tracking-widest">Drag players here to bench them</p>
-    </div>
+    <Card className="glass p-6 border-white/10 bg-black/40 backdrop-blur-xl border-l-4 border-l-amber-500/50">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+          <Ban className="h-5 w-5 text-amber-500" />
+        </div>
+        <div>
+          <h3 className="font-black uppercase tracking-widest text-sm text-amber-400">Bench</h3>
+          <p className="text-xs text-muted-foreground font-medium">Players not playing — excluded from auto-balance</p>
+        </div>
+        <Badge variant="secondary" className="ml-auto text-xs font-bold bg-amber-500/10 text-amber-400 border-amber-500/20">
+          {players.length} Benched
+        </Badge>
+      </div>
+      
+      <div
+        ref={setNodeRef}
+        className={`transition-all ${isOver ? 'bg-amber-500/5 rounded-2xl p-2' : ''}`}
+      >
+        <SortableContext
+          items={players.map((p) => p.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {players.length === 0 ? (
+            <div className="py-8 flex flex-col items-center justify-center text-muted-foreground/40 border-2 border-dashed rounded-2xl transition-all">
+              <Ban className="h-8 w-8 mb-2 opacity-50" />
+              <p className="text-xs font-bold uppercase tracking-widest">Drag players here to bench them</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {players.map((player) => (
+                <div key={player.id} className="relative group">
+                  <DraggablePlayer player={player} />
+                  <button
+                    onClick={() => onMoveFromBench(player.id)}
+                    className="absolute -top-1 -right-1 z-10 bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-emerald-400"
+                    title="Move to reserves"
+                  >
+                    <ArrowRight className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </SortableContext>
+      </div>
+    </Card>
   );
 }
 
