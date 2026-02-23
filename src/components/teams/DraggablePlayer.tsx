@@ -204,8 +204,9 @@ export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain, o
       </HoverCardTrigger>
       <HoverCardContent 
         className="w-64 p-0 bg-zinc-950/95 border-white/10"
-        side="right"
-        sideOffset={8}
+        side="bottom"
+        align="start"
+        sideOffset={4}
       >
         {/* Header */}
         <div className="p-3 border-b border-white/10 flex items-center gap-3">
