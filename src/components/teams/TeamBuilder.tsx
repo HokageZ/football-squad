@@ -382,7 +382,7 @@ export function TeamBuilder() {
         {/* Controls */}
         <div className="sticky top-20 z-30 glass p-2 rounded-2xl border border-white/10 shadow-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
           <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
-            <Button onClick={handleRandomizeTeams} className="gap-2 font-bold bg-white/5 hover:bg-white/10 text-white border border-white/5 h-10 px-4 rounded-xl transition-[background-color,transform] hover:scale-105">
+            <Button onClick={handleRandomizeTeams} className="gap-2 font-bold bg-white/5 hover:bg-white/10 text-white border border-white/5 h-10 px-4 rounded-xl transition-colors">
               <Shuffle className="h-4 w-4" />
               Auto Balance
             </Button>
@@ -393,7 +393,7 @@ export function TeamBuilder() {
             <div className="hidden sm:block w-px h-8 bg-white/10 mx-2" />
             <Button
               onClick={handleOpenMatchDialog}
-              className="gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white border-none shadow-lg hover:shadow-xl h-10 px-6 rounded-xl font-bold transition-[background,box-shadow,transform] hover:scale-105"
+              className="gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white border-none shadow-lg hover:shadow-xl h-10 px-6 rounded-xl font-bold transition-[background,box-shadow]"
             >
               <Trophy className="h-4 w-4" />
               Create Match
@@ -454,7 +454,7 @@ export function TeamBuilder() {
       {/* Drag Overlay */}
       <DragOverlay>
         {activePlayer && (
-          <div className="opacity-90 scale-105 cursor-grabbing">
+          <div className="opacity-90 cursor-grabbing">
             <DraggablePlayer player={activePlayer} />
           </div>
         )}

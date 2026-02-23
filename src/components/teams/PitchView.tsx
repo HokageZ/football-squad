@@ -62,9 +62,6 @@ export function PitchView({ team, side, onMakeCaptain, onBenchPlayer, onRenameTe
 
       {/* Pitch Grid & Lines */}
       <div className="absolute inset-0 opacity-20 pointer-events-none">
-        {/* Base Grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px]" />
-
         {/* Tactical Lines */}
         <div className={`absolute top-0 bottom-0 w-px bg-white/30 ${side === 'left' ? 'right-0' : 'left-0'}`} />
         <div className={`absolute top-1/2 w-32 h-32 border-2 border-white/30 rounded-full -translate-y-1/2 ${side === 'left' ? '-right-16' : '-left-16'}`} />

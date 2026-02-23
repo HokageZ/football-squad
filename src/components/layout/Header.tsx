@@ -84,7 +84,7 @@ export function Header() {
             {/* Animated pill - positioned relative to nav container */}
             {pillStyle && (
               <motion.div
-                className="absolute top-0 h-full bg-primary rounded-full shadow-[0_0_20px_rgba(var(--primary),0.4)]"
+                className="absolute top-0 h-full bg-primary rounded-full shadow-lg"
                 animate={{ left: pillStyle.left, width: pillStyle.width }}
                 transition={isInitial ? { duration: 0 } : { type: "spring", bounce: 0.2, duration: 0.6 }}
               />
@@ -170,7 +170,7 @@ export function Header() {
                         className={cn(
                           'flex items-center gap-4 p-4 rounded-2xl text-xl font-black tracking-tight transition-colors border',
                           isActive
-                            ? 'bg-primary text-black border-primary shadow-[0_0_30px_rgba(var(--primary),0.3)]'
+                            ? 'bg-primary text-black border-primary shadow-lg'
                             : 'text-white border-white/10 hover:bg-white/5'
                         )}
                       >

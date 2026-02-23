@@ -82,7 +82,7 @@ export default function DashboardPage() {
         {/* Background Image & Overlay */}
         <div className="absolute inset-0 bg-black/40 z-10" />
         <div
-          className="absolute inset-0 bg-[url('/hero-bg.png')] bg-cover bg-center z-0 transition-transform duration-700 group-hover:scale-105"
+          className="absolute inset-0 bg-[url('/hero-bg.png')] bg-cover bg-center z-0"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent z-10" />
 
@@ -140,7 +140,7 @@ export default function DashboardPage() {
                 <stat.icon className={`h-4 w-4 ${stat.color}`} />
               </CardHeader>
               <CardContent className="relative z-10">
-                <div className={`text-3xl sm:text-4xl font-black tracking-tight ${stat.color} drop-shadow-lg`}>
+                <div className={`text-3xl sm:text-4xl font-black tracking-tight ${stat.color}`}>
                   {stat.value}
                 </div>
                 <p className="text-xs font-medium text-muted-foreground mt-1">

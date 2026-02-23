@@ -78,7 +78,7 @@ export function PlayerCard({
 
   if (compact) {
     return (
-      <Card className={`p-3 glass border-l-4 transition-transform duration-200 hover:scale-[1.02] cursor-pointer ${getCardStyle(overall).split(' ')[2]} border-l-${player.isUnknown ? 'white/20' : getOverallColor(overall).split(' ')[0]}`}>
+      <Card className={`p-3 glass border-l-4 transition-colors duration-200 cursor-pointer ${getCardStyle(overall).split(' ')[2]} border-l-${player.isUnknown ? 'white/20' : getOverallColor(overall).split(' ')[0]}`}>
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10 ring-2 ring-white/10">
             <AvatarImage src={player.image} alt={player.name} />
@@ -128,12 +128,9 @@ export function PlayerCard({
     <div className="h-full">
       <div className={`
         relative h-full overflow-hidden rounded-xl border bg-gradient-to-br
-        transition-transform duration-200 hover:scale-[1.02]
+        transition-colors duration-200 hover:border-white/30
         ${getCardStyle(overall)}
       `}>
-        {/* Decorative Background Pattern */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(255,255,255,0.1),transparent)]" />
-        <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-5 mix-blend-overlay" />
 
         <div className="relative p-5">
           {/* Header Section */}
@@ -148,8 +145,7 @@ export function PlayerCard({
             </div>
             
             <div className="relative group">
-              <div className={`absolute inset-0 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${player.isUnknown ? 'bg-white/10' : 'bg-primary/20'}`} />
-              <Avatar className="h-20 w-20 border-2 border-white/10 shadow-2xl">
+              <Avatar className="h-20 w-20 border-2 border-white/10 shadow-xl">
                 <AvatarImage src={player.image} alt={player.name} className="object-cover" />
                 <AvatarFallback className="bg-black/40 text-2xl font-bold">
                   {player.isUnknown ? '?' : player.name.substring(0, 2).toUpperCase()}

@@ -189,6 +189,19 @@
   [class*="shadow-[0_0_"] {
     box-shadow: 0 4px 12px rgb(0 0 0 / 0.3) !important;
   }
+
+  /* Override shadow-2xl (50px blur) — too expensive on mobile */
+  .shadow-2xl {
+    box-shadow: 0 8px 24px -4px rgb(0 0 0 / 0.4) !important;
+  }
+}
+
+/* Mobile-specific performance: disable hover transforms entirely on touch */
+@media (hover: none) {
+  [class*="hover\\:scale-"],
+  [class*="group-hover\\:scale-"] {
+    transform: none !important;
+  }
 }
 
 /* Custom slider styling */
@@ -203,7 +216,7 @@
 [data-slot="slider-thumb"] {
   border-color: var(--slider-color, var(--primary));
   background: var(--background);
-  box-shadow: 0 0 10px var(--slider-color, var(--primary));
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
 }
 
 [data-slot="slider-thumb"]:hover {
