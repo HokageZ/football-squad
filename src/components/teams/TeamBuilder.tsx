@@ -38,7 +38,7 @@ import {
 import { format } from 'date-fns';
 import { usePlayers } from '@/context/PlayerContext';
 import { useMatches } from '@/context/MatchContext';
-import { Player, Team, POSITION_COLORS } from '@/lib/types';
+import { Player, Team, POSITION_COLORS, STAT_KEYS, STAT_LABELS, STAT_COLORS } from '@/lib/types';
 import { balanceTeams, randomizeTeams, calculateTeamOverall, calculateOverall, calculateTeamTotalOverall } from '@/lib/team-balancer';
 import { getStoredTeams, setStoredTeams, getStoredUnassigned, setStoredUnassigned, getStoredBench, setStoredBench } from '@/lib/storage';
 import { PitchView } from './PitchView';
@@ -448,11 +448,60 @@ export function TeamBuilder() {
         )}
       </div>
 
-      {/* Drag Overlay — full player preview */}
+      {/* Drag Overlay — player card with stats */}
       <DragOverlay dropAnimation={null}>
         {activePlayer && (
-          <div className="opacity-90 cursor-grabbing will-change-transform">
-            <DraggablePlayer player={activePlayer} />
+          <div className="cursor-grabbing will-change-transform w-56">
+            <div className="bg-zinc-900 rounded-xl border border-white/20 shadow-2xl overflow-hidden">
+              {/* Player row */}
+              <div className="flex items-center gap-2 p-2">
+                <Avatar className="h-9 w-9 border border-white/10">
+                  <AvatarImage src={activePlayer.image} alt={activePlayer.name} />
+                  <AvatarFallback className="bg-white/5 text-xs font-bold">
+                    {activePlayer.isUnknown ? '?' : activePlayer.name.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm truncate">{activePlayer.name}</p>
+                  {activePlayer.position && (
+                    <span
+                      className="text-[9px] font-bold px-1 py-0.5 rounded"
+                      style={{
+                        color: POSITION_COLORS[activePlayer.position],
+                        backgroundColor: `${POSITION_COLORS[activePlayer.position]}20`,
+                      }}
+                    >
+                      {activePlayer.position}
+                    </span>
+                  )}
+                </div>
+                <Badge
+                  variant="outline"
+                  className="font-mono font-bold text-xs shrink-0"
+                >
+                  {activePlayer.isUnknown ? '?' : calculateOverall(activePlayer.stats)}
+                </Badge>
+              </div>
+
+              {/* Stats grid */}
+              {!activePlayer.isUnknown && (
+                <div className="grid grid-cols-3 gap-1 px-2 pb-2">
+                  {STAT_KEYS.map((key) => (
+                    <div key={key} className="text-center py-1 rounded bg-white/5">
+                      <div
+                        className="text-sm font-black leading-none"
+                        style={{ color: activePlayer.stats[key] >= 75 ? STAT_COLORS[key] : undefined }}
+                      >
+                        {activePlayer.stats[key]}
+                      </div>
+                      <div className="text-[8px] text-muted-foreground font-bold uppercase mt-0.5">
+                        {STAT_LABELS[key]}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </DragOverlay>
