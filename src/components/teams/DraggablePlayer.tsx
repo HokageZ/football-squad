@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Zap, Target, Sparkles, Shield, Dumbbell, ArrowRight, Ban } from 'lucide-react';
@@ -21,7 +22,7 @@ interface DraggablePlayerProps {
   onBench?: () => void;
 }
 
-export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain, onBench }: DraggablePlayerProps) {
+export const DraggablePlayer = memo(function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain, onBench }: DraggablePlayerProps) {
   const {
     attributes,
     listeners,
@@ -104,9 +105,9 @@ export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain, o
       style={style}
       className={`
         relative flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 bg-zinc-900/90 rounded-lg border touch-none
-        ${isDragging ? 'opacity-50 shadow-xl scale-105 z-50' : 'shadow-sm active:scale-[0.97] active:bg-zinc-800/90'}
+        ${isDragging ? 'opacity-50 shadow-xl z-50' : 'shadow-sm active:scale-[0.97] active:bg-zinc-800/90'}
         ${teamColor ? 'border-l-2 sm:border-l-4' : 'border-white/10 hover:border-white/20'}
-        transition-[border-color,transform,background-color] duration-150 cursor-grab active:cursor-grabbing group
+        transition-[border-color,background-color] duration-150 cursor-grab active:cursor-grabbing group
       `}
       {...attributes}
       {...listeners}
@@ -295,4 +296,4 @@ export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain, o
       </HoverCardContent>
     </HoverCard>
   );
-}
+});
