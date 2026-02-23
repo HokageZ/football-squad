@@ -131,9 +131,12 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
     });
   };
 
-  const overall = position ? calculatePositionOverall(stats, position) : calculateOverall(stats);
   const baseOverall = calculateOverall(stats);
   const positionOverall = position ? calculatePositionOverall(stats, position) : null;
+  const positionBias = position === 'GK' ? 0.7 : 0.3;
+  const overall = positionOverall !== null
+    ? Math.round(baseOverall * (1 - positionBias) + positionOverall * positionBias)
+    : baseOverall;
 
   // Get the importance weight for a stat in the selected position
   const getStatWeight = (key: StatKey): number | null => {

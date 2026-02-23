@@ -19,12 +19,16 @@ export function calculatePositionOverall(stats: PlayerStats, position?: PlayerPo
 
 /**
  * Get the effective overall rating for a player.
- * Uses position-weighted calculation when position is set, otherwise base overall.
+ * Blends base average with position-weighted rating for a position-biased overall.
+ * GK uses a stronger bias since goalkeeping is a specialized role.
  */
 export function getPlayerOverall(player: Player): number {
-  return player.position
-    ? calculatePositionOverall(player.stats, player.position)
-    : calculateOverall(player.stats);
+  if (!player.position) return calculateOverall(player.stats);
+
+  const base = calculateOverall(player.stats);
+  const posWeighted = calculatePositionOverall(player.stats, player.position);
+  const bias = player.position === 'GK' ? 0.7 : 0.3;
+  return Math.round(base * (1 - bias) + posWeighted * bias);
 }
 
 export function calculateTeamOverall(players: Player[]): number {
