@@ -20,6 +20,7 @@ import {
   PlayerPosition,
   StatKey,
   STAT_KEYS,
+  OUTFIELD_STAT_KEYS,
   STAT_LABELS,
   STAT_DESCRIPTIONS,
   DEFAULT_STATS,
@@ -409,7 +410,7 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
                   <span className="text-[10px] font-bold text-muted-foreground bg-white/5 px-2 py-1 rounded">1-99</span>
                 </div>
                 <div className="grid gap-7 bg-white/5 p-6 rounded-2xl border border-white/10">
-                  {STAT_KEYS.map((key) => {
+                  {(position === 'GK' ? STAT_KEYS : OUTFIELD_STAT_KEYS).map((key) => {
                     const weight = getStatWeight(key);
                     return (
                       <div key={key} className="relative">

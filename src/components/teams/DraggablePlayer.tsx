@@ -11,7 +11,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card';
-import { Player, POSITION_COLORS, STAT_LABELS, STAT_COLORS, STAT_KEYS } from '@/lib/types';
+import { Player, POSITION_COLORS, STAT_LABELS, STAT_COLORS, STAT_KEYS, OUTFIELD_STAT_KEYS } from '@/lib/types';
 import { getPlayerOverall } from '@/lib/team-balancer';
 
 interface DraggablePlayerProps {
@@ -48,8 +48,9 @@ export const DraggablePlayer = memo(function DraggablePlayer({ player, teamColor
     const stats = player.stats;
     const strengths: { label: string; value: number; icon: string }[] = [];
     
-    // Find top 2 stats
-    const sortedStats = STAT_KEYS
+    // Find top 2 stats (exclude goalkeeping for non-GK players)
+    const relevantKeys = player.position === 'GK' ? STAT_KEYS : OUTFIELD_STAT_KEYS;
+    const sortedStats = relevantKeys
       .map(key => ({ key, value: stats[key] }))
       .sort((a, b) => b.value - a.value);
     
@@ -243,7 +244,7 @@ export const DraggablePlayer = memo(function DraggablePlayer({ player, teamColor
         {!player.isUnknown && (
           <div className="p-3 space-y-3">
             <div className="grid grid-cols-3 gap-2">
-              {STAT_KEYS.map((key) => (
+              {(player.position === 'GK' ? STAT_KEYS : OUTFIELD_STAT_KEYS).map((key) => (
                 <div key={key} className="text-center">
                   <div 
                     className="text-lg font-black"

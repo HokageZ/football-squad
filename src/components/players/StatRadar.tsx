@@ -1,17 +1,19 @@
 'use client';
 
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer } from 'recharts';
-import { PlayerStats, STAT_KEYS, STAT_LABELS, STAT_COLORS } from '@/lib/types';
+import { PlayerStats, PlayerPosition, STAT_KEYS, OUTFIELD_STAT_KEYS, STAT_LABELS, STAT_COLORS } from '@/lib/types';
 
 interface StatRadarProps {
   stats: PlayerStats;
   height?: number;
   showLabels?: boolean;
+  position?: PlayerPosition;
 }
 
-export function StatRadar({ stats, height = 200, showLabels = true }: StatRadarProps) {
+export function StatRadar({ stats, height = 200, showLabels = true, position }: StatRadarProps) {
+  const statKeys = position === 'GK' ? STAT_KEYS : OUTFIELD_STAT_KEYS;
   // Add a max-value reference point so the radar has a fixed outer boundary
-  const data = STAT_KEYS.map((key) => ({
+  const data = statKeys.map((key) => ({
     subject: STAT_LABELS[key],
     A: stats[key],
     max: 99,

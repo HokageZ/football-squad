@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Player, STAT_KEYS, STAT_LABELS, POSITION_COLORS } from '@/lib/types';
+import { Player, STAT_KEYS, OUTFIELD_STAT_KEYS, STAT_LABELS, POSITION_COLORS } from '@/lib/types';
 import { calculateOverall, calculatePositionOverall, getPlayerOverall } from '@/lib/team-balancer';
 import { StatRadar } from './StatRadar';
 
@@ -259,13 +259,13 @@ export function PlayerCard({
                   <p className="text-xs uppercase font-bold tracking-widest">Stats Hidden</p>
                 </div>
               ) : (
-                <StatRadar stats={player.stats} height={140} />
+                <StatRadar stats={player.stats} height={140} position={player.position} />
               )}
             </div>
 
             {/* Numeric Stats Grid */}
             <div className="col-span-2 grid grid-cols-3 gap-x-2 gap-y-3 px-2">
-              {STAT_KEYS.map((key) => (
+              {(player.position === 'GK' ? STAT_KEYS : OUTFIELD_STAT_KEYS).map((key) => (
                 <div key={key} className="flex items-end justify-between border-b border-white/5 pb-1">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                     {STAT_LABELS[key]}

@@ -9,7 +9,7 @@ import { Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Team, STAT_KEYS, STAT_LABELS, STAT_COLORS } from '@/lib/types';
+import { Team, OUTFIELD_STAT_KEYS, STAT_LABELS, STAT_COLORS } from '@/lib/types';
 import { calculateTeamOverall, getTeamStatAverage } from '@/lib/team-balancer';
 import { DraggablePlayer } from './DraggablePlayer';
 
@@ -58,8 +58,8 @@ export function TeamCard({ team }: TeamCardProps) {
       <CardContent className="flex-1 flex flex-col pt-0">
         {/* Team Stats Overview */}
         {team.players.length > 0 && (
-          <div className="grid grid-cols-7 gap-1 mb-4 p-2 bg-accent/30 rounded-lg">
-            {STAT_KEYS.map((key) => (
+          <div className="grid grid-cols-6 gap-1 mb-4 p-2 bg-accent/30 rounded-lg">
+            {OUTFIELD_STAT_KEYS.map((key) => (
               <div key={key} className="text-center">
                 <p
                   className="text-[10px] font-medium uppercase"
