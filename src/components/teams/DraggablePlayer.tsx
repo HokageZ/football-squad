@@ -104,9 +104,9 @@ export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain, o
       style={style}
       className={`
         relative flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 bg-zinc-900/90 rounded-lg border
-        ${isDragging ? 'opacity-50 shadow-xl scale-105 z-50' : 'shadow-sm'}
+        ${isDragging ? 'opacity-50 shadow-xl scale-105 z-50' : 'shadow-sm active:scale-[0.97] active:bg-zinc-800/90'}
         ${teamColor ? 'border-l-2 sm:border-l-4' : 'border-white/10 hover:border-white/20'}
-        transition-[border-color] duration-200 cursor-grab active:cursor-grabbing group
+        transition-[border-color,transform,background-color] duration-150 cursor-grab active:cursor-grabbing group
       `}
       {...attributes}
       {...listeners}
@@ -152,7 +152,7 @@ export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain, o
               e.stopPropagation();
               onBench();
             }}
-            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-amber-500/20 rounded text-muted-foreground hover:text-amber-500 transition-all"
+            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-amber-500/20 rounded text-muted-foreground hover:text-amber-500 transition-colors"
             title="Move to bench"
             onPointerDown={(e) => e.stopPropagation()}
           >
@@ -167,7 +167,7 @@ export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain, o
               e.stopPropagation(); // Prevent drag start
               onMakeCaptain();
             }}
-            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-white/10 rounded text-muted-foreground hover:text-yellow-500 transition-all"
+            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-white/10 rounded text-muted-foreground hover:text-yellow-500 transition-colors"
             title="Make Captain"
             onPointerDown={(e) => e.stopPropagation()} // Important for dnd-kit
           >
@@ -203,7 +203,7 @@ export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain, o
         {playerCard}
       </HoverCardTrigger>
       <HoverCardContent 
-        className="w-64 p-0 bg-black/95 border-white/10 backdrop-blur-xl"
+        className="w-64 p-0 bg-zinc-950/95 border-white/10"
         side="right"
         sideOffset={8}
       >

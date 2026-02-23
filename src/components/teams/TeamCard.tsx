@@ -28,7 +28,7 @@ export function TeamCard({ team }: TeamCardProps) {
     <Card
       ref={setNodeRef}
       className={`
-        h-full flex flex-col transition-all duration-200
+        h-full flex flex-col transition-[border-color] duration-200
         ${isOver ? 'ring-2 ring-primary shadow-lg' : ''}
       `}
       style={{

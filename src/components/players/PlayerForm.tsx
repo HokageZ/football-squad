@@ -30,6 +30,7 @@ import {
   POSITION_STAT_WEIGHTS,
 } from '@/lib/types';
 import { calculateOverall, calculatePositionOverall, detectBestPosition, validateStats } from '@/lib/team-balancer';
+import { compressImage } from '@/lib/image';
 import { StatSlider } from './StatSlider';
 
 const PRESET_LEVELS = [
@@ -59,6 +60,8 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
   const [warnings, setWarnings] = useState<string[]>([]);
   const [detectedPosition, setDetectedPosition] = useState<PlayerPosition | null>(null);
   const [activePreset, setActivePreset] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
 
   // Detect best position and validate stats when stats change
   useEffect(() => {
@@ -83,14 +86,26 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    setImageError(null);
+    setImageLoading(true);
+
+    try {
+      const compressed = await compressImage(file, {
+        maxWidth: 256,
+        maxHeight: 256,
+        quality: 0.7,
+      });
+      setImage(compressed);
+    } catch (err) {
+      setImageError(err instanceof Error ? err.message : 'Failed to process image');
+    } finally {
+      setImageLoading(false);
+      // Reset input so the same file can be re-selected
+      e.target.value = '';
     }
   };
 
@@ -131,7 +146,7 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
         {/* Avatar Section */}
         <div className="flex flex-col items-center gap-6">
           <div className="relative group">
-            <Avatar className={`h-32 w-32 border-4 shadow-2xl transition-all duration-300 ${isUnknown ? 'border-white/10 opacity-50' : 'border-primary/30 group-hover:border-primary/50'}`}>
+            <Avatar className={`h-32 w-32 border-4 shadow-2xl transition-[border-color,opacity] duration-300 ${isUnknown ? 'border-white/10 opacity-50' : 'border-primary/30 group-hover:border-primary/50'}`}>
               <AvatarImage src={image} alt={name || 'Player'} className="object-cover" />
               <AvatarFallback className="bg-gradient-to-br from-white/10 to-black/20 text-4xl font-black">
                 {isUnknown ? '?' : (name ? name.substring(0, 2).toUpperCase() : <User className="h-12 w-12" />)}
@@ -141,19 +156,19 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
               <button
                 type="button"
                 onClick={() => setImage('')}
-                className="absolute top-0 right-0 p-1.5 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-all shadow-lg hover:scale-110"
+                className="absolute top-0 right-0 p-1.5 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors shadow-lg hover:scale-110"
               >
                 <X className="h-4 w-4" />
               </button>
             )}
           </div>
-          <div>
+          <div className="flex flex-col items-center gap-2">
             <Label
               htmlFor="image-upload"
-              className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-all hover:scale-105 font-bold text-xs uppercase tracking-wider"
+              className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-colors hover:scale-105 font-bold text-xs uppercase tracking-wider ${imageLoading ? 'opacity-50 pointer-events-none' : ''}`}
             >
               <Upload className="h-3.5 w-3.5" />
-              {image ? 'Change Photo' : 'Upload Photo'}
+              {imageLoading ? 'Processing...' : image ? 'Change Photo' : 'Upload Photo'}
             </Label>
             <Input
               id="image-upload"
@@ -161,7 +176,14 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
               accept="image/*"
               onChange={handleImageChange}
               className="hidden"
+              disabled={imageLoading}
             />
+            {imageError && (
+              <p className="text-xs font-bold text-destructive flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                {imageError}
+              </p>
+            )}
           </div>
         </div>
 
@@ -207,7 +229,7 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
                   type="button"
                   onClick={() => setPosition(position === pos ? undefined : pos)}
                   className={`
-                    relative overflow-hidden p-3 rounded-xl border-2 transition-all duration-200 group
+                    relative overflow-hidden p-3 rounded-xl border-2 transition-[border-color,background-color] duration-200 group
                     ${position === pos 
                       ? 'border-current bg-current/10 shadow-[0_0_15px_-5px_currentColor]' 
                       : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10'
@@ -255,11 +277,11 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
                 <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-5 mix-blend-overlay" />
                 <div className="relative z-10">
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">Overall Rating</p>
-                  <span className={`text-6xl font-black tracking-tighter transition-all duration-300 ${
-                    overall >= 90 ? 'text-yellow-500 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]' :
-                    overall >= 80 ? 'text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]' :
-                    overall >= 70 ? 'text-blue-500 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]' :
-                    'text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                  <span className={`text-6xl font-black tracking-tighter transition-colors duration-300 ${
+                    overall >= 90 ? 'text-yellow-500' :
+                    overall >= 80 ? 'text-emerald-500' :
+                    overall >= 70 ? 'text-blue-500' :
+                    'text-white'
                   }`}>
                     {overall}
                   </span>
@@ -298,7 +320,7 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
                           type="button"
                           onClick={() => handleApplyPreset(key)}
                           className={`
-                            relative overflow-hidden p-3 rounded-2xl border transition-all duration-300 group
+                            relative overflow-hidden p-3 rounded-2xl border transition-[border-color,background-color,transform] duration-300 group
                             ${activePreset === key 
                               ? 'border-primary bg-primary/10 shadow-[0_0_20px_-5px_rgba(var(--primary),0.3)] scale-[1.02]' 
                               : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 hover:scale-[1.02]'
@@ -314,7 +336,7 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
                           </div>
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="bottom" className="bg-zinc-900 border-white/10 text-white backdrop-blur-xl">
+                      <TooltipContent side="bottom" className="bg-zinc-900 border-white/10 text-white">
                         <p className="text-xs font-bold">{description}</p>
                         {position && <p className="text-[10px] text-muted-foreground mt-1">Stats optimized for {POSITION_LABELS[position]}</p>}
                       </TooltipContent>
@@ -416,7 +438,7 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
           </Button>
           <Button
             type="submit"
-            className="flex-1 h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
+            className="flex-1 h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-bold rounded-xl shadow-lg hover:shadow-xl transition-shadow"
           >
             {isEditing ? (
               <>

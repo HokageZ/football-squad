@@ -10,9 +10,11 @@ interface StatRadarProps {
 }
 
 export function StatRadar({ stats, height = 200, showLabels = true }: StatRadarProps) {
+  // Add a max-value reference point so the radar has a fixed outer boundary
   const data = STAT_KEYS.map((key) => ({
     subject: STAT_LABELS[key],
     A: stats[key],
+    max: 99,
     fullMark: 99,
     color: STAT_COLORS[key],
   }));
@@ -21,12 +23,21 @@ export function StatRadar({ stats, height = 200, showLabels = true }: StatRadarP
     <div style={{ height, width: '100%' }}>
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
-          <PolarGrid stroke="currentColor" strokeOpacity={0.1} />
+          <PolarGrid stroke="currentColor" strokeOpacity={0.15} gridType="polygon" />
           <PolarAngleAxis
             dataKey="subject"
             tick={{ fill: 'currentColor', fontSize: 10, fontWeight: 'bold', opacity: 0.7 }}
             axisLine={false}
             tickLine={false}
+          />
+          <Radar
+            name="Max"
+            dataKey="max"
+            stroke="currentColor"
+            strokeOpacity={0.08}
+            strokeWidth={1}
+            fill="transparent"
+            fillOpacity={0}
           />
           <Radar
             name="Player"

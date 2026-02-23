@@ -107,13 +107,13 @@ export default function DashboardPage() {
 
           <div className="flex flex-wrap gap-4">
             <Link href="/teams">
-              <Button size="lg" className="h-14 px-8 rounded-full font-bold text-base shadow-[0_0_30px_rgba(var(--primary),0.3)] hover:shadow-[0_0_50px_rgba(var(--primary),0.5)] transition-all bg-primary text-primary-foreground hover:bg-primary/90 border-0">
+              <Button size="lg" className="h-14 px-8 rounded-full font-bold text-base shadow-lg hover:shadow-xl transition-shadow bg-primary text-primary-foreground hover:bg-primary/90 border-0">
                 <Swords className="mr-2 h-5 w-5" />
                 Start Match
               </Button>
             </Link>
             <Link href="/matches">
-              <Button size="lg" variant="outline" className="h-14 px-8 rounded-full border-white/10 bg-white/5 hover:bg-white/10 font-bold text-base backdrop-blur-md text-white hover:text-white hover:border-white/20">
+              <Button size="lg" variant="outline" className="h-14 px-8 rounded-full border-white/10 bg-white/5 hover:bg-white/10 font-bold text-base text-white hover:text-white hover:border-white/20">
                 <Calendar className="mr-2 h-5 w-5" />
                 History
               </Button>
@@ -131,7 +131,7 @@ export default function DashboardPage() {
           { title: 'Status', value: totalPlayers >= 2 ? 'Ready' : 'Recruiting', sub: totalPlayers >= 2 ? 'Deployable' : 'Need Players', icon: Swords, color: totalPlayers >= 2 ? 'text-emerald-400' : 'text-rose-400' },
         ].map((stat, i) => (
           <motion.div key={i} variants={item}>
-            <Card className="glass group hover:bg-white/5 transition-all duration-300 border-white/5 hover:border-primary/20 relative overflow-hidden">
+            <Card className="glass group hover:bg-white/5 transition-colors duration-300 border-white/5 hover:border-primary/20 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                 <stat.icon className={`h-16 w-16 ${stat.color}`} />
               </div>
@@ -188,7 +188,7 @@ export default function DashboardPage() {
                   {[...matches].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 4).map((match) => (
                     <div
                       key={match.id}
-                      className="group flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-transparent hover:border-primary/20"
+                      className="group flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-transparent hover:border-primary/20"
                     >
                       <div className="flex flex-col gap-1">
                         <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
@@ -260,7 +260,7 @@ export default function DashboardPage() {
                   {topPlayers.map((player, index) => (
                     <div
                       key={player.id}
-                      className="group flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-all border border-transparent hover:border-white/10 relative overflow-hidden"
+                      className="group flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/10 relative overflow-hidden"
                     >
                       {/* Rank Indicator */}
                       <div className={`

@@ -44,6 +44,7 @@ import { balanceTeams, randomizeTeams, calculateTeamOverall, calculateOverall, c
 import { getStoredTeams, setStoredTeams, getStoredUnassigned, setStoredUnassigned, getStoredBench, setStoredBench } from '@/lib/storage';
 import { PitchView } from './PitchView';
 import { DraggablePlayer } from './DraggablePlayer';
+import { toast } from 'sonner';
 
 export function TeamBuilder() {
   const { players } = usePlayers();
@@ -65,8 +66,8 @@ export function TeamBuilder() {
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 200,
-        tolerance: 8,
+        delay: 150,
+        tolerance: 6,
       },
     })
   );
@@ -136,6 +137,7 @@ export function TeamBuilder() {
     const balanced = balanceTeams(players, 2, true, benchIds);
     setTeams(balanced);
     setUnassignedPlayers([]);
+    toast.success('Teams auto-balanced');
   }, [players, benchPlayers]);
 
   const handleRandomizeTeams = useCallback(() => {
@@ -143,6 +145,7 @@ export function TeamBuilder() {
     const randomized = randomizeTeams(players, 2, benchIds);
     setTeams(randomized);
     setUnassignedPlayers([]);
+    toast.success('Teams randomized');
   }, [players, benchPlayers]);
 
   const handleResetTeams = useCallback(() => {
@@ -152,6 +155,7 @@ export function TeamBuilder() {
     ]);
     const nonBenched = players.filter(p => !benchPlayers.find(bp => bp.id === p.id));
     setUnassignedPlayers(nonBenched);
+    toast('Teams reset');
   }, [players, benchPlayers]);
 
   const findPlayerContainer = (playerId: string): string | null => {
@@ -342,6 +346,7 @@ export function TeamBuilder() {
     addMatch(teams[0], teams[1], dateTime.toISOString(), benchPlayers.length > 0 ? benchPlayers : undefined);
 
     setShowMatchDialog(false);
+    toast.success('Match created');
     router.push('/matches');
   };
 
@@ -377,18 +382,18 @@ export function TeamBuilder() {
         {/* Controls */}
         <div className="sticky top-20 z-30 glass p-2 rounded-2xl border border-white/10 shadow-2xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
           <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
-            <Button onClick={handleRandomizeTeams} className="gap-2 font-bold bg-white/5 hover:bg-white/10 text-white border border-white/5 h-10 px-4 rounded-xl transition-all hover:scale-105">
+            <Button onClick={handleRandomizeTeams} className="gap-2 font-bold bg-white/5 hover:bg-white/10 text-white border border-white/5 h-10 px-4 rounded-xl transition-[background-color,transform] hover:scale-105">
               <Shuffle className="h-4 w-4" />
               Auto Balance
             </Button>
-            <Button onClick={handleResetTeams} variant="ghost" className="gap-2 h-10 px-4 rounded-xl hover:bg-white/5 text-muted-foreground hover:text-white transition-all">
+            <Button onClick={handleResetTeams} variant="ghost" className="gap-2 h-10 px-4 rounded-xl hover:bg-white/5 text-muted-foreground hover:text-white transition-colors">
               <RotateCcw className="h-4 w-4" />
               Reset
             </Button>
             <div className="hidden sm:block w-px h-8 bg-white/10 mx-2" />
             <Button
               onClick={handleOpenMatchDialog}
-              className="gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white border-none shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] h-10 px-6 rounded-xl font-bold transition-all hover:scale-105"
+              className="gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white border-none shadow-lg hover:shadow-xl h-10 px-6 rounded-xl font-bold transition-[background,box-shadow,transform] hover:scale-105"
             >
               <Trophy className="h-4 w-4" />
               Create Match
@@ -457,7 +462,7 @@ export function TeamBuilder() {
 
       {/* Enhanced Match Creation Dialog */}
       <Dialog open={showMatchDialog} onOpenChange={setShowMatchDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-black/95 border-white/10 backdrop-blur-2xl p-0 gap-0">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-zinc-950/98 border-white/10 p-0 gap-0">
           {/* Match Poster Header */}
           <div className="relative overflow-hidden p-8 border-b border-white/10">
             <div className="absolute inset-0 bg-gradient-to-r from-red-900/20 via-black/40 to-blue-900/20" />
@@ -640,7 +645,7 @@ function UnassignedArea({ players, onMoveToBench }: UnassignedAreaProps) {
       
       <div
         ref={setNodeRef}
-        className={`transition-all ${isOver ? 'bg-white/5 rounded-2xl p-2' : ''}`}
+        className={`transition-colors ${isOver ? 'bg-white/5 rounded-2xl p-2' : ''}`}
       >
         <SortableContext
           items={players.map((p) => p.id)}
@@ -692,14 +697,14 @@ function BenchArea({ players, onMoveFromBench }: BenchAreaProps) {
       
       <div
         ref={setNodeRef}
-        className={`transition-all ${isOver ? 'bg-amber-500/5 rounded-2xl p-2' : ''}`}
+        className={`transition-colors ${isOver ? 'bg-amber-500/5 rounded-2xl p-2' : ''}`}
       >
         <SortableContext
           items={players.map((p) => p.id)}
           strategy={verticalListSortingStrategy}
         >
           {players.length === 0 ? (
-            <div className="py-8 flex flex-col items-center justify-center text-muted-foreground/40 border-2 border-dashed rounded-2xl transition-all">
+            <div className="py-8 flex flex-col items-center justify-center text-muted-foreground/40 border-2 border-dashed rounded-2xl">
               <Ban className="h-8 w-8 mb-2 opacity-50" />
               <p className="text-xs font-bold uppercase tracking-widest">Drag players here to bench them</p>
             </div>

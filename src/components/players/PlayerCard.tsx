@@ -70,15 +70,15 @@ export function PlayerCard({
 
   const getOverallColor = (rating: number) => {
     if (player.isUnknown) return 'text-white/50';
-    if (rating >= 90) return 'text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]';
-    if (rating >= 80) return 'text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]';
-    if (rating >= 70) return 'text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]';
+    if (rating >= 90) return 'text-yellow-500';
+    if (rating >= 80) return 'text-emerald-500';
+    if (rating >= 70) return 'text-blue-500';
     return 'text-slate-400';
   };
 
   if (compact) {
     return (
-      <Card className={`p-3 glass border-l-4 transition-all hover:scale-[1.02] cursor-pointer ${getCardStyle(overall).split(' ')[2]} border-l-${player.isUnknown ? 'white/20' : getOverallColor(overall).split(' ')[0]}`}>
+      <Card className={`p-3 glass border-l-4 transition-transform duration-200 hover:scale-[1.02] cursor-pointer ${getCardStyle(overall).split(' ')[2]} border-l-${player.isUnknown ? 'white/20' : getOverallColor(overall).split(' ')[0]}`}>
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10 ring-2 ring-white/10">
             <AvatarImage src={player.image} alt={player.name} />
@@ -127,7 +127,7 @@ export function PlayerCard({
   return (
     <div className="h-full">
       <div className={`
-        relative h-full overflow-hidden rounded-xl border bg-gradient-to-br backdrop-blur-xl
+        relative h-full overflow-hidden rounded-xl border bg-gradient-to-br
         transition-transform duration-200 hover:scale-[1.02]
         ${getCardStyle(overall)}
       `}>
@@ -164,7 +164,7 @@ export function PlayerCard({
                     <MoreVertical className="h-4 w-4" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-black/90 border-white/10 backdrop-blur-xl">
+                <DropdownMenuContent align="end" className="bg-zinc-950/95 border-white/10">
                   {onEdit && (
                     <DropdownMenuItem onClick={onEdit} className="focus:bg-white/10">
                       <Edit className="h-4 w-4 mr-2" />

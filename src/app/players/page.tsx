@@ -96,7 +96,7 @@ export default function PlayersPage() {
           <Button
             onClick={() => setIsAddDialogOpen(true)}
             size="lg"
-            className="rounded-full font-bold shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:shadow-[0_0_30px_rgba(var(--primary),0.5)] transition-all"
+            className="rounded-full font-bold shadow-lg hover:shadow-xl transition-shadow"
           >
             <Plus className="mr-2 h-5 w-5" />
             Recruit Player
@@ -106,7 +106,7 @@ export default function PlayersPage() {
 
       {/* Controls Bar */}
       <div
-        className="sticky top-20 z-30 p-2 rounded-2xl bg-black/40 backdrop-blur-xl border border-white/10 shadow-xl flex flex-col sm:flex-row gap-2"
+        className="sticky top-20 z-30 p-2 rounded-2xl bg-zinc-950/95 border border-white/10 shadow-xl flex flex-col sm:flex-row gap-2"
       >
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -114,7 +114,7 @@ export default function PlayersPage() {
             placeholder="Search by name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-12 bg-white/5 border-transparent focus:bg-white/10 focus:border-primary/50 rounded-xl font-medium transition-all"
+            className="pl-10 h-12 bg-white/5 border-transparent focus:bg-white/10 focus:border-primary/50 rounded-xl font-medium transition-colors"
           />
         </div>
 
@@ -123,7 +123,7 @@ export default function PlayersPage() {
             variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('grid')}
-            className={`h-10 px-4 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-primary text-primary-foreground shadow-lg' : 'hover:bg-white/10'}`}
+            className={`h-10 px-4 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-primary text-primary-foreground shadow-lg' : 'hover:bg-white/10'}`}
           >
             <Grid className="h-4 w-4" />
           </Button>
@@ -131,7 +131,7 @@ export default function PlayersPage() {
             variant={viewMode === 'list' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('list')}
-            className={`h-10 px-4 rounded-lg transition-all ${viewMode === 'list' ? 'bg-primary text-primary-foreground shadow-lg' : 'hover:bg-white/10'}`}
+            className={`h-10 px-4 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-primary text-primary-foreground shadow-lg' : 'hover:bg-white/10'}`}
           >
             <List className="h-4 w-4" />
           </Button>

@@ -4,6 +4,7 @@ import { PlayerProvider } from "@/context/PlayerContext";
 import { MatchProvider } from "@/context/MatchContext";
 import { Header } from "@/components/layout/Header";
 import { BackgroundEffect } from "@/components/layout/BackgroundEffect";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,6 +37,7 @@ export default function RootLayout({
           <MatchProvider>
             <Header />
             <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl relative z-10">{children}</main>
+            <Toaster theme="dark" position="bottom-center" toastOptions={{ className: 'bg-zinc-900 border-white/10 text-white font-bold text-sm' }} />
           </MatchProvider>
         </PlayerProvider>
       </body>

@@ -53,7 +53,7 @@ export function PitchView({ team, side, onMakeCaptain, onBenchPlayer, onRenameTe
     <div
       ref={setNodeRef}
       className={`
-        relative flex flex-col h-full min-h-[500px] rounded-3xl overflow-hidden transition-all duration-500
+        relative flex flex-col h-full min-h-[500px] rounded-3xl overflow-hidden transition-colors duration-500
         ${isOver ? 'bg-primary/5 shadow-[inset_0_0_50px_rgba(var(--primary),0.2)]' : 'bg-black/40'}
       `}
     >

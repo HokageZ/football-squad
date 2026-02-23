@@ -175,7 +175,7 @@ export default function MatchesPage() {
 
             return (
               <div key={match.id}>
-                <Card className={`glass overflow-hidden group transition-all duration-300 ${
+                <Card className={`glass overflow-hidden group transition-colors duration-300 ${
                   winner === 'a' || winner === 'b' ? 'hover:border-primary/30' : 'hover:border-white/20'
                 } ${isExpanded ? 'border-primary/20' : ''}`}>
                   <CardContent className="p-0">
@@ -232,7 +232,7 @@ export default function MatchesPage() {
                           {/* Score Display */}
                           <div className="flex items-center gap-4 min-w-[140px] justify-center relative z-10">
                             {editingMatchId === match.id ? (
-                              <div className="flex items-center gap-2 bg-black/40 p-2 rounded-xl border border-white/10 backdrop-blur-md">
+                              <div className="flex items-center gap-2 bg-zinc-900/90 p-2 rounded-xl border border-white/10">
                                 <Input
                                   type="number"
                                   className="w-12 text-center font-bold bg-white/5 border-white/10 h-9"
@@ -322,7 +322,7 @@ export default function MatchesPage() {
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-black/90 border-white/10 backdrop-blur-xl">
+                            <DropdownMenuContent align="end" className="bg-zinc-950/95 border-white/10">
                               <DropdownMenuItem onClick={() => setEditingMatchId(match.id)} className="focus:bg-white/10">
                                 <Edit2 className="h-4 w-4 mr-2" />
                                 Edit Result

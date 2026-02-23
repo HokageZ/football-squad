@@ -66,7 +66,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full px-4 pt-4">
       <div className="container mx-auto max-w-5xl">
-        <div className="flex items-center justify-between gap-4 rounded-full border border-white/10 bg-black/90 backdrop-blur-xl px-4 py-3 shadow-2xl ring-1 ring-white/5 relative z-50">
+        <div className="flex items-center justify-between gap-4 rounded-full border border-white/10 bg-zinc-950/95 px-4 py-3 shadow-2xl ring-1 ring-white/5 relative z-50">
           <Link href="/" className="flex items-center gap-3 group shrink-0 pl-2">
             <Logo className="text-primary group-hover:scale-110 transition-transform duration-300" />
             <div className="flex flex-col">
@@ -152,7 +152,7 @@ export function Header() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-40 bg-black/95 backdrop-blur-xl sm:hidden flex flex-col pt-32 px-6"
+              className="fixed inset-0 z-40 bg-zinc-950/98 sm:hidden flex flex-col pt-32 px-6"
             >
               <nav className="flex flex-col gap-4">
                 {navItems.map(({ href, label, icon: Icon }, index) => {
@@ -168,7 +168,7 @@ export function Header() {
                         href={href}
                         onClick={() => setMobileMenuOpen(false)}
                         className={cn(
-                          'flex items-center gap-4 p-4 rounded-2xl text-xl font-black tracking-tight transition-all border',
+                          'flex items-center gap-4 p-4 rounded-2xl text-xl font-black tracking-tight transition-colors border',
                           isActive
                             ? 'bg-primary text-black border-primary shadow-[0_0_30px_rgba(var(--primary),0.3)]'
                             : 'text-white border-white/10 hover:bg-white/5'
