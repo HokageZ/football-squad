@@ -448,11 +448,20 @@ export function TeamBuilder() {
         )}
       </div>
 
-      {/* Drag Overlay */}
-      <DragOverlay>
+      {/* Drag Overlay — lightweight preview for smooth 60fps drag */}
+      <DragOverlay dropAnimation={null}>
         {activePlayer && (
-          <div className="opacity-90 cursor-grabbing">
-            <DraggablePlayer player={activePlayer} />
+          <div className="flex items-center gap-2 p-2 bg-zinc-900 rounded-lg border border-white/20 shadow-xl cursor-grabbing will-change-transform">
+            <Avatar className="h-8 w-8 border border-white/10">
+              <AvatarImage src={activePlayer.image} alt={activePlayer.name} />
+              <AvatarFallback className="bg-white/5 text-xs font-bold">
+                {activePlayer.isUnknown ? '?' : activePlayer.name.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span className="font-bold text-sm truncate max-w-[120px]">{activePlayer.name}</span>
+            <Badge variant="outline" className="font-mono font-bold text-xs ml-auto shrink-0">
+              {activePlayer.isUnknown ? '?' : calculateOverall(activePlayer.stats)}
+            </Badge>
           </div>
         )}
       </DragOverlay>
