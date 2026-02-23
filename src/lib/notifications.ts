@@ -2,6 +2,7 @@
 
 import { Match } from './types';
 import { getStoredNotificationSchedule, setStoredNotificationSchedule } from './storage';
+import { playNotificationRing } from './notification-sound';
 
 const NOTIFICATION_TIMERS: Record<string, ReturnType<typeof setTimeout>> = {};
 
@@ -106,6 +107,9 @@ function showMatchNotification(match: Match): void {
   const body = `${match.teamA.name} vs ${match.teamB.name} kicks off at ${timeStr}`;
 
   try {
+    // Play ringtone sound
+    playNotificationRing();
+
     // Try service worker notification first (works in background)
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage({
@@ -122,6 +126,7 @@ function showMatchNotification(match: Match): void {
         badge: '/favicon.ico',
         tag: `match-${match.id}`,
         requireInteraction: true,
+        silent: false,
       });
     }
   } catch (error) {

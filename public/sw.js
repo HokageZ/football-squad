@@ -18,6 +18,7 @@ self.addEventListener('message', (event) => {
       badge: '/favicon.ico',
       tag: `match-${matchId}`,
       requireInteraction: true,
+      vibrate: [200, 100, 200, 100, 200, 300, 200, 100, 200, 100, 200],
       actions: [
         { action: 'view', title: 'View Match' },
         { action: 'dismiss', title: 'Dismiss' },
