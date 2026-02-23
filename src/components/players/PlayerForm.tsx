@@ -28,6 +28,7 @@ import {
   POSITION_COLORS,
   STAT_PRESETS,
   POSITION_STAT_WEIGHTS,
+  POSITION_OVERALL_BIAS,
 } from '@/lib/types';
 import { calculateOverall, calculatePositionOverall, detectBestPosition, validateStats } from '@/lib/team-balancer';
 import { compressImage } from '@/lib/image';
@@ -133,9 +134,8 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
 
   const baseOverall = calculateOverall(stats);
   const positionOverall = position ? calculatePositionOverall(stats, position) : null;
-  const positionBias = position === 'GK' ? 0.7 : 0.3;
   const overall = positionOverall !== null
-    ? Math.round(baseOverall * (1 - positionBias) + positionOverall * positionBias)
+    ? Math.round(baseOverall * (1 - POSITION_OVERALL_BIAS[position!]) + positionOverall * POSITION_OVERALL_BIAS[position!])
     : baseOverall;
 
   // Get the importance weight for a stat in the selected position

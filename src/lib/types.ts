@@ -120,6 +120,14 @@ export const POSITION_STAT_WEIGHTS: Record<PlayerPosition, Record<StatKey, numbe
   ATT: { pace: 0.2, shooting: 0.3, dribbling: 0.25, passing: 0.1, defending: 0.05, physical: 0.1, goalkeeping: 0 },
 };
 
+// How much the overall rating is biased toward position-weighted stats (0 = pure average, 1 = fully position-weighted)
+export const POSITION_OVERALL_BIAS: Record<PlayerPosition, number> = {
+  GK: 0.7,
+  DEF: 0.3,
+  MID: 0.3,
+  ATT: 0.3,
+};
+
 // Stat presets by skill level and position
 export const STAT_PRESETS: Record<string, Record<PlayerPosition | 'ANY', PlayerStats>> = {
   Beginner: {

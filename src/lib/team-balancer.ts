@@ -1,4 +1,4 @@
-import { Player, PlayerStats, PlayerPosition, STAT_KEYS, Team, POSITION_STAT_WEIGHTS, OUTFIELD_STAT_KEYS } from './types';
+import { Player, PlayerStats, PlayerPosition, STAT_KEYS, Team, POSITION_STAT_WEIGHTS, POSITION_OVERALL_BIAS, OUTFIELD_STAT_KEYS } from './types';
 
 export function calculateOverall(stats: PlayerStats): number {
   const total = OUTFIELD_STAT_KEYS.reduce((sum, key) => sum + stats[key], 0);
@@ -27,7 +27,7 @@ export function getPlayerOverall(player: Player): number {
 
   const base = calculateOverall(player.stats);
   const posWeighted = calculatePositionOverall(player.stats, player.position);
-  const bias = player.position === 'GK' ? 0.7 : 0.3;
+  const bias = POSITION_OVERALL_BIAS[player.position];
   return Math.round(base * (1 - bias) + posWeighted * bias);
 }
 
