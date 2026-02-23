@@ -1,8 +1,8 @@
-import { Player, PlayerStats, PlayerPosition, STAT_KEYS, Team, POSITIONS, POSITION_STAT_WEIGHTS } from './types';
+import { Player, PlayerStats, PlayerPosition, STAT_KEYS, Team, POSITION_STAT_WEIGHTS, POSITION_OVERALL_BIAS, OUTFIELD_STAT_KEYS } from './types';
 
 export function calculateOverall(stats: PlayerStats): number {
-  const total = STAT_KEYS.reduce((sum, key) => sum + stats[key], 0);
-  return Math.round(total / STAT_KEYS.length);
+  const total = OUTFIELD_STAT_KEYS.reduce((sum, key) => sum + stats[key], 0);
+  return Math.round(total / OUTFIELD_STAT_KEYS.length);
 }
 
 /**
@@ -17,20 +17,34 @@ export function calculatePositionOverall(stats: PlayerStats, position?: PlayerPo
   return Math.round(weighted);
 }
 
+/**
+ * Get the effective overall rating for a player.
+ * Blends base average with position-weighted rating for a position-biased overall.
+ * GK uses a stronger bias since goalkeeping is a specialized role.
+ */
+export function getPlayerOverall(player: Player): number {
+  if (!player.position) return calculateOverall(player.stats);
+
+  const base = calculateOverall(player.stats);
+  const posWeighted = calculatePositionOverall(player.stats, player.position);
+  const bias = POSITION_OVERALL_BIAS[player.position];
+  return Math.round(base * (1 - bias) + posWeighted * bias);
+}
+
 export function calculateTeamOverall(players: Player[]): number {
   // Filter out unknown players from team rating
   const knownPlayers = players.filter(p => !p.isUnknown);
   
   if (knownPlayers.length === 0) return 0;
   
-  const total = knownPlayers.reduce((sum, p) => sum + calculateOverall(p.stats), 0);
+  const total = knownPlayers.reduce((sum, p) => sum + getPlayerOverall(p), 0);
   return Math.round(total / knownPlayers.length);
 }
 
 export function calculateTeamTotalOverall(players: Player[]): number {
   return players
     .filter(p => !p.isUnknown)
-    .reduce((sum, p) => sum + calculateOverall(p.stats), 0);
+    .reduce((sum, p) => sum + getPlayerOverall(p), 0);
 }
 
 function shuffleArray<T>(array: T[]): T[] {
@@ -87,7 +101,7 @@ export function balanceTeams(
         if (a.isUnknown && b.isUnknown) return 0;
         if (a.isUnknown) return 1;
         if (b.isUnknown) return -1;
-        return calculateOverall(b.stats) - calculateOverall(a.stats);
+        return getPlayerOverall(b) - getPlayerOverall(a);
       });
     });
 
@@ -123,7 +137,7 @@ export function balanceTeams(
       if (a.isUnknown && b.isUnknown) return 0;
       if (a.isUnknown) return 1;
       if (b.isUnknown) return -1;
-      return calculateOverall(b.stats) - calculateOverall(a.stats);
+      return getPlayerOverall(b) - getPlayerOverall(a);
     });
 
     let teamIndex = 0;
@@ -350,7 +364,7 @@ export function detectBestPosition(stats: PlayerStats): PlayerPosition {
   if (stats.shooting >= 80 && stats.pace >= 75 && stats.defending <= 50) {
     return 'ATT';
   }
-  if (stats.defending >= 85 && stats.pace <= 55) {
+  if (stats.goalkeeping >= 70) {
     return 'GK';
   }
   
@@ -363,14 +377,17 @@ export function detectBestPosition(stats: PlayerStats): PlayerPosition {
 export function validateStats(stats: PlayerStats, position?: PlayerPosition): string[] {
   const warnings: string[] = [];
   
-  const allMax = STAT_KEYS.every(key => stats[key] >= 95);
+  const allMax = OUTFIELD_STAT_KEYS.every(key => stats[key] >= 95);
   if (allMax) {
     warnings.push('All stats maxed out — is this player really elite in everything?');
   }
   
   if (position === 'GK') {
-    if (stats.shooting >= 85 && stats.defending <= 50) {
-      warnings.push('A goalkeeper with high shooting but low defending is unusual.');
+    if (stats.goalkeeping <= 40) {
+      warnings.push('A goalkeeper should typically have a higher goalkeeping stat.');
+    }
+    if (stats.shooting >= 85 && stats.goalkeeping <= 50) {
+      warnings.push('A goalkeeper with high shooting but low goalkeeping is unusual.');
     }
   }
   

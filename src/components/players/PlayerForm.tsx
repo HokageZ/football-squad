@@ -28,6 +28,7 @@ import {
   POSITION_COLORS,
   STAT_PRESETS,
   POSITION_STAT_WEIGHTS,
+  POSITION_OVERALL_BIAS,
 } from '@/lib/types';
 import { calculateOverall, calculatePositionOverall, detectBestPosition, validateStats } from '@/lib/team-balancer';
 import { compressImage } from '@/lib/image';
@@ -131,8 +132,11 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
     });
   };
 
-  const overall = calculateOverall(stats);
+  const baseOverall = calculateOverall(stats);
   const positionOverall = position ? calculatePositionOverall(stats, position) : null;
+  const overall = positionOverall !== null
+    ? Math.round(baseOverall * (1 - POSITION_OVERALL_BIAS[position!]) + positionOverall * POSITION_OVERALL_BIAS[position!])
+    : baseOverall;
 
   // Get the importance weight for a stat in the selected position
   const getStatWeight = (key: StatKey): number | null => {
@@ -284,16 +288,16 @@ export function PlayerForm({ player, onSubmit, onCancel }: PlayerFormProps) {
                   }`}>
                     {overall}
                   </span>
-                  {/* Position-weighted overall */}
-                  {positionOverall !== null && positionOverall !== overall && (
+                  {/* Base overall (when different from position-weighted) */}
+                  {positionOverall !== null && positionOverall !== baseOverall && (
                     <div className="mt-2 flex items-center justify-center gap-2">
-                      <span className="text-xs font-bold text-muted-foreground">{position} Rating:</span>
+                      <span className="text-xs font-bold text-muted-foreground">Base OVR:</span>
                       <span className={`text-lg font-black ${
-                        positionOverall >= 80 ? 'text-emerald-400' :
-                        positionOverall >= 70 ? 'text-blue-400' :
+                        baseOverall >= 80 ? 'text-emerald-400' :
+                        baseOverall >= 70 ? 'text-blue-400' :
                         'text-muted-foreground'
                       }`}>
-                        {positionOverall}
+                        {baseOverall}
                       </span>
                     </div>
                   )}
