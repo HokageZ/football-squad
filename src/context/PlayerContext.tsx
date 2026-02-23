@@ -49,7 +49,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       return p;
     });
 
-    setPlayers(migrated);
+    // Migration: Add goalkeeping stat if missing
+    const withGoalkeeping = migrated.map(p => {
+      if (!('goalkeeping' in p.stats) || p.stats.goalkeeping === undefined) {
+        return {
+          ...p,
+          stats: {
+            ...p.stats,
+            goalkeeping: p.position === 'GK' ? 65 : 30,
+          },
+        };
+      }
+      return p;
+    });
+
+    setPlayers(withGoalkeeping);
     setIsLoading(false);
   }, []);
 

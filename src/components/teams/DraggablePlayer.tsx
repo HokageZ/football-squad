@@ -12,7 +12,7 @@ import {
   HoverCardTrigger,
 } from '@/components/ui/hover-card';
 import { Player, POSITION_COLORS, STAT_LABELS, STAT_COLORS, STAT_KEYS } from '@/lib/types';
-import { calculateOverall } from '@/lib/team-balancer';
+import { getPlayerOverall } from '@/lib/team-balancer';
 
 interface DraggablePlayerProps {
   player: Player;
@@ -39,7 +39,7 @@ export const DraggablePlayer = memo(function DraggablePlayer({ player, teamColor
     willChange: isDragging ? 'transform' as const : undefined,
   };
 
-  const overall = calculateOverall(player.stats);
+  const overall = getPlayerOverall(player);
 
   // Get player's top stats and strengths
   const getPlayerStrengths = () => {
@@ -64,6 +64,7 @@ export const DraggablePlayer = memo(function DraggablePlayer({ player, teamColor
           passing: '🎯 Playmaker',
           defending: '🛡️ Solid Defender',
           physical: '💪 Tank',
+          goalkeeping: '🧤 Safe Hands',
         };
         strengths.push({ label: labels[key] || key, value, icon: key });
       }

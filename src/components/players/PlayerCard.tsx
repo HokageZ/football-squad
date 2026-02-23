@@ -11,14 +11,48 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Player, STAT_KEYS, STAT_LABELS, POSITION_COLORS } from '@/lib/types';
-import { calculateOverall, calculatePositionOverall, detectBestPosition } from '@/lib/team-balancer';
+import { calculateOverall, calculatePositionOverall, getPlayerOverall } from '@/lib/team-balancer';
 import { StatRadar } from './StatRadar';
 
 function getPlayerType(player: Player): { label: string; color: string } {
   const s = player.stats;
   if (player.isUnknown) return { label: 'Unknown', color: 'text-muted-foreground' };
 
-  // Check dominant stats to determine archetype
+  // Position-specific archetypes
+  if (player.position === 'GK') {
+    if (s.goalkeeping >= 85 && s.pace >= 70) return { label: 'Sweeper Keeper', color: 'text-cyan-400' };
+    if (s.goalkeeping >= 85 && s.physical >= 75) return { label: 'Commander', color: 'text-amber-400' };
+    if (s.goalkeeping >= 80 && s.passing >= 70) return { label: 'Distributor', color: 'text-blue-400' };
+    if (s.goalkeeping >= 75) return { label: 'Shot Stopper', color: 'text-yellow-400' };
+    if (s.goalkeeping >= 60) return { label: 'Keeper', color: 'text-muted-foreground' };
+  }
+
+  if (player.position === 'DEF') {
+    if (s.defending >= 80 && s.pace >= 75) return { label: 'Sweeper', color: 'text-cyan-400' };
+    if (s.defending >= 80 && s.physical >= 80) return { label: 'Stopper', color: 'text-orange-400' };
+    if (s.defending >= 75 && s.passing >= 75) return { label: 'Ball Player', color: 'text-blue-400' };
+    if (s.defending >= 80 && s.dribbling >= 70) return { label: 'Modern Defender', color: 'text-emerald-400' };
+    if (s.defending >= 75) return { label: 'Rock', color: 'text-indigo-400' };
+  }
+
+  if (player.position === 'MID') {
+    if (s.passing >= 80 && s.defending >= 70) return { label: 'Deep Playmaker', color: 'text-purple-400' };
+    if (s.passing >= 80 && s.dribbling >= 75) return { label: 'Maestro', color: 'text-yellow-400' };
+    if (s.physical >= 75 && s.defending >= 70 && s.pace >= 70) return { label: 'Box-to-Box', color: 'text-orange-400' };
+    if (s.shooting >= 75 && s.dribbling >= 75) return { label: 'Attacking Mid', color: 'text-red-400' };
+    if (s.pace >= 80 && s.dribbling >= 75) return { label: 'Engine', color: 'text-emerald-400' };
+  }
+
+  if (player.position === 'ATT') {
+    if (s.shooting >= 85 && s.pace >= 80) return { label: 'Poacher', color: 'text-red-400' };
+    if (s.physical >= 80 && s.shooting >= 75) return { label: 'Target Man', color: 'text-orange-400' };
+    if (s.dribbling >= 80 && s.passing >= 75) return { label: 'False 9', color: 'text-purple-400' };
+    if (s.pace >= 85 && s.dribbling >= 80) return { label: 'Winger', color: 'text-emerald-400' };
+    if (s.shooting >= 80) return { label: 'Fox in the Box', color: 'text-yellow-400' };
+    if (s.pace >= 85) return { label: 'Speedster', color: 'text-cyan-400' };
+  }
+
+  // Generic archetypes (no position or no match above)
   if (s.pace >= 80 && s.shooting >= 75 && s.dribbling >= 75) return { label: 'Speedster', color: 'text-cyan-400' };
   if (s.shooting >= 80 && s.passing >= 70) return { label: 'Playmaker', color: 'text-purple-400' };
   if (s.defending >= 80 && s.physical >= 75) return { label: 'Wall', color: 'text-blue-400' };
@@ -56,9 +90,10 @@ export function PlayerCard({
   onDelete,
   compact = false,
 }: PlayerCardProps) {
-  const overall = calculateOverall(player.stats);
+  const overall = getPlayerOverall(player);
   const playerType = getPlayerType(player);
   const posOverall = player.position ? calculatePositionOverall(player.stats, player.position) : null;
+  const baseOverall = calculateOverall(player.stats);
 
   const getCardStyle = (rating: number) => {
     if (player.isUnknown) return 'from-zinc-900 to-black border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.1)]';
@@ -204,11 +239,11 @@ export function PlayerCard({
                 </span>
               )}
             </div>
-            {/* Position-weighted rating */}
-            {posOverall !== null && posOverall !== overall && !player.isUnknown && (
+            {/* Base overall (when different from position-weighted) */}
+            {posOverall !== null && posOverall !== baseOverall && !player.isUnknown && (
               <div className="flex items-center justify-center gap-1 mt-1.5">
                 <Zap className="h-3 w-3 text-muted-foreground" />
-                <span className="text-[10px] font-bold text-muted-foreground">{player.position} Rating: {posOverall}</span>
+                <span className="text-[10px] font-bold text-muted-foreground">Base OVR: {baseOverall}</span>
               </div>
             )}
             <div className={`h-1 w-12 mx-auto mt-2 opacity-50 ${player.isUnknown ? 'bg-white/20' : 'bg-gradient-to-r from-transparent via-primary to-transparent'}`} />

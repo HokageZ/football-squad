@@ -58,7 +58,7 @@ export function TeamCard({ team }: TeamCardProps) {
       <CardContent className="flex-1 flex flex-col pt-0">
         {/* Team Stats Overview */}
         {team.players.length > 0 && (
-          <div className="grid grid-cols-6 gap-1 mb-4 p-2 bg-accent/30 rounded-lg">
+          <div className="grid grid-cols-7 gap-1 mb-4 p-2 bg-accent/30 rounded-lg">
             {STAT_KEYS.map((key) => (
               <div key={key} className="text-center">
                 <p
