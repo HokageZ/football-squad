@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   DndContext,
   DragEndEvent,
-  DragOverEvent,
   DragOverlay,
   DragStartEvent,
   MouseSensor,
@@ -184,54 +183,9 @@ export function TeamBuilder() {
     setActivePlayer(player);
   };
 
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = active.id as string;
-    const overId = over.id as string;
-
-    const activeContainer = findPlayerContainer(activeId);
-    let overContainer = findPlayerContainer(overId);
-
-    if (teams.find((t) => t.id === overId) || overId === 'unassigned' || overId === 'bench') {
-      overContainer = overId;
-    }
-
-    if (!activeContainer || !overContainer || activeContainer === overContainer) return;
-
-    const player = findPlayer(activeId);
-    if (!player) return;
-
-    // Remove from source
-    if (activeContainer === 'unassigned') {
-      setUnassignedPlayers((prev) => prev.filter((p) => p.id !== activeId));
-    } else if (activeContainer === 'bench') {
-      setBenchPlayers((prev) => prev.filter((p) => p.id !== activeId));
-    } else {
-      setTeams((prev) =>
-        prev.map((team) =>
-          team.id === activeContainer
-            ? { ...team, players: team.players.filter((p) => p.id !== activeId) }
-            : team
-        )
-      );
-    }
-
-    // Add to destination (with deduplication guard for rapid handleDragOver calls)
-    if (overContainer === 'unassigned') {
-      setUnassignedPlayers((prev) => prev.some(p => p.id === player.id) ? prev : [...prev, player]);
-    } else if (overContainer === 'bench') {
-      setBenchPlayers((prev) => prev.some(p => p.id === player.id) ? prev : [...prev, player]);
-    } else {
-      setTeams((prev) =>
-        prev.map((team) =>
-          team.id === overContainer
-            ? { ...team, players: team.players.some(p => p.id === player.id) ? team.players : [...team.players, player] }
-            : team
-        )
-      );
-    }
+  const handleDragOver = () => {
+    // Cross-container moves are handled in handleDragEnd to avoid
+    // race conditions from rapid state updates during touch drag
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -244,11 +198,54 @@ export function TeamBuilder() {
     const overId = over.id as string;
 
     const activeContainer = findPlayerContainer(activeId);
-    const overContainer = findPlayerContainer(overId);
+    let overContainer = findPlayerContainer(overId);
+
+    // Check if dropping directly onto a container (team, unassigned, or bench)
+    if (teams.find((t) => t.id === overId) || overId === 'unassigned' || overId === 'bench') {
+      overContainer = overId;
+    }
 
     if (!activeContainer || !overContainer) return;
 
-    if (activeContainer === overContainer && activeId !== overId) {
+    const player = findPlayer(activeId);
+    if (!player) return;
+
+    // Cross-container move
+    if (activeContainer !== overContainer) {
+      // Remove from source
+      if (activeContainer === 'unassigned') {
+        setUnassignedPlayers((prev) => prev.filter((p) => p.id !== activeId));
+      } else if (activeContainer === 'bench') {
+        setBenchPlayers((prev) => prev.filter((p) => p.id !== activeId));
+      } else {
+        setTeams((prev) =>
+          prev.map((team) =>
+            team.id === activeContainer
+              ? { ...team, players: team.players.filter((p) => p.id !== activeId) }
+              : team
+          )
+        );
+      }
+
+      // Add to destination
+      if (overContainer === 'unassigned') {
+        setUnassignedPlayers((prev) => prev.some(p => p.id === player.id) ? prev : [...prev, player]);
+      } else if (overContainer === 'bench') {
+        setBenchPlayers((prev) => prev.some(p => p.id === player.id) ? prev : [...prev, player]);
+      } else {
+        setTeams((prev) =>
+          prev.map((team) =>
+            team.id === overContainer
+              ? { ...team, players: team.players.some(p => p.id === player.id) ? team.players : [...team.players, player] }
+              : team
+          )
+        );
+      }
+      return;
+    }
+
+    // Same-container reorder
+    if (activeId !== overId) {
       if (activeContainer === 'unassigned') {
         setUnassignedPlayers((prev) => {
           const oldIndex = prev.findIndex((p) => p.id === activeId);
