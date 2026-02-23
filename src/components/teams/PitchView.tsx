@@ -78,7 +78,7 @@ export function PitchView({ team, side, onMakeCaptain, onBenchPlayer, onRenameTe
 
       {/* Team Header - Floating Glass Card */}
       <div className="relative z-10 p-6">
-        <div className="relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl p-4 group hover:bg-white/10 transition-colors">
+        <div className="relative overflow-hidden rounded-2xl bg-zinc-900/80 border border-white/10 p-4 group hover:bg-zinc-900/90 transition-colors">
           <div className={`absolute inset-0 bg-gradient-to-r opacity-10 transition-opacity group-hover:opacity-20`} style={{ backgroundImage: `linear-gradient(to right, ${team.color}, transparent)` }} />
 
           <div className="relative flex items-center justify-between">

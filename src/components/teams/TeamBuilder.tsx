@@ -8,6 +8,7 @@ import {
   DragOverlay,
   DragStartEvent,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   closestCenter,
@@ -60,6 +61,12 @@ export function TeamBuilder() {
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 8,
       },
     })
   );
@@ -617,7 +624,7 @@ function UnassignedArea({ players, onMoveToBench }: UnassignedAreaProps) {
   const { setNodeRef, isOver } = useDroppable({ id: 'unassigned' });
   
   return (
-    <Card className="glass p-6 border-white/10 bg-black/40 backdrop-blur-xl">
+    <Card className="glass p-6 border-white/10 bg-zinc-900/90">
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 rounded-lg bg-white/5 border border-white/10">
           <Shirt className="h-5 w-5 text-muted-foreground" />
@@ -669,7 +676,7 @@ function BenchArea({ players, onMoveFromBench }: BenchAreaProps) {
   const { setNodeRef, isOver } = useDroppable({ id: 'bench' });
   
   return (
-    <Card className="glass p-6 border-white/10 bg-black/40 backdrop-blur-xl border-l-4 border-l-amber-500/50">
+    <Card className="glass p-6 border-white/10 bg-zinc-900/90 border-l-4 border-l-amber-500/50">
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
           <Ban className="h-5 w-5 text-amber-500" />
