@@ -196,14 +196,6 @@
   }
 }
 
-/* Mobile-specific performance: disable hover transforms entirely on touch */
-@media (hover: none) {
-  [class*="hover\\:scale-"],
-  [class*="group-hover\\:scale-"] {
-    transform: none !important;
-  }
-}
-
 /* Custom slider styling */
 [data-slot="slider-track"] {
   background: var(--muted);
@@ -271,7 +263,7 @@ body {
 /* Better touch targets on mobile */
 @media (max-width: 640px) {
 
-  button,
+  button:not([class*="absolute"]),
   a {
     min-height: 36px;
   }

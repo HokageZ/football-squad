@@ -657,7 +657,7 @@ function UnassignedArea({ players, onMoveToBench }: UnassignedAreaProps) {
                 <DraggablePlayer player={player} />
                 <button
                   onClick={() => onMoveToBench(player.id)}
-                  className="absolute -top-1 -right-1 z-10 bg-amber-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-amber-400"
+                  className="absolute -top-1 -right-1 z-10 bg-amber-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity hover:bg-amber-400"
                   title="Move to bench"
                 >
                   <Ban className="h-3 w-3" />
@@ -715,7 +715,7 @@ function BenchArea({ players, onMoveFromBench }: BenchAreaProps) {
                   <DraggablePlayer player={player} />
                   <button
                     onClick={() => onMoveFromBench(player.id)}
-                    className="absolute -top-1 -right-1 z-10 bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-emerald-400"
+                    className="absolute -top-1 -right-1 z-10 bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity hover:bg-emerald-400"
                     title="Move to reserves"
                   >
                     <ArrowRight className="h-3 w-3" />
