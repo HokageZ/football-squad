@@ -103,7 +103,7 @@ export function DraggablePlayer({ player, teamColor, isCaptain, onMakeCaptain, o
       ref={setNodeRef}
       style={style}
       className={`
-        relative flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 bg-zinc-900/90 rounded-lg border
+        relative flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 bg-zinc-900/90 rounded-lg border touch-none
         ${isDragging ? 'opacity-50 shadow-xl scale-105 z-50' : 'shadow-sm active:scale-[0.97] active:bg-zinc-800/90'}
         ${teamColor ? 'border-l-2 sm:border-l-4' : 'border-white/10 hover:border-white/20'}
         transition-[border-color,transform,background-color] duration-150 cursor-grab active:cursor-grabbing group

@@ -7,7 +7,7 @@ import {
   DragOverEvent,
   DragOverlay,
   DragStartEvent,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   useSensor,
   useSensors,
@@ -59,15 +59,15 @@ export function TeamBuilder() {
   const [matchTime, setMatchTime] = useState('');
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
         distance: 8,
       },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 150,
-        tolerance: 6,
+        delay: 250,
+        tolerance: 5,
       },
     })
   );
