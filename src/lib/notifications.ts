@@ -1,35 +1,33 @@
 'use client';
 
 import { Match } from './types';
-import { getStoredNotificationSchedule, setStoredNotificationSchedule } from './storage';
 import { playNotificationRing } from './notification-sound';
 
-const NOTIFICATION_TIMERS: Record<string, ReturnType<typeof setTimeout>> = {};
+// ─── Helpers ─────────────────────────────────────────────────────
 
-/**
- * Request browser notification permission.
- * Returns true if permission is granted.
- */
+async function getSWRegistration(): Promise<ServiceWorkerRegistration | null> {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return null;
+  return navigator.serviceWorker.ready;
+}
+
+function sendToSW(message: Record<string, unknown>): void {
+  if (navigator.serviceWorker?.controller) {
+    navigator.serviceWorker.controller.postMessage(message);
+  }
+}
+
+// ─── Permissions ─────────────────────────────────────────────────
+
 export async function requestNotificationPermission(): Promise<boolean> {
-  if (typeof window === 'undefined' || !('Notification' in window)) {
-    return false;
-  }
+  if (typeof window === 'undefined' || !('Notification' in window)) return false;
 
-  if (Notification.permission === 'granted') {
-    return true;
-  }
-
-  if (Notification.permission === 'denied') {
-    return false;
-  }
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
 
   const permission = await Notification.requestPermission();
   return permission === 'granted';
 }
 
-/**
- * Check if notifications are supported and permission is granted
- */
 export function isNotificationSupported(): boolean {
   return typeof window !== 'undefined' && 'Notification' in window;
 }
@@ -39,142 +37,115 @@ export function getNotificationPermission(): NotificationPermission | 'unsupport
   return Notification.permission;
 }
 
+// ─── Schedule / cancel via Service Worker ────────────────────────
+
 /**
  * Schedule a notification 1 hour before a match.
- * If the match is less than 1 hour away, notify immediately.
- * If the match is in the past, skip.
+ * Delegates to the Service Worker so it fires even when the tab is
+ * backgrounded or the screen is off.
  */
 export function scheduleMatchNotification(match: Match): void {
-  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (typeof window === 'undefined') return;
   if (Notification.permission !== 'granted') return;
   if (match.status === 'completed') return;
 
   const matchTime = new Date(match.date).getTime();
   const now = Date.now();
-  const oneHourBefore = matchTime - 60 * 60 * 1000;
 
-  // If match is in the past, skip
+  // Skip matches in the past
   if (matchTime <= now) return;
 
-  // Calculate delay: either 1hr before or immediately if less than 1hr away
-  const delay = Math.max(0, oneHourBefore - now);
+  // Notify 1 hour before, or immediately if less than 1 hour away
+  const notifyAt = Math.max(now, matchTime - 60 * 60 * 1000);
 
-  // Cancel any existing timer for this match
-  cancelMatchNotification(match.id);
-
-  // Set the timer
-  const timerId = setTimeout(() => {
-    showMatchNotification(match);
-    // Clean up from schedule
-    const schedule = getStoredNotificationSchedule();
-    delete schedule[match.id];
-    setStoredNotificationSchedule(schedule);
-  }, delay);
-
-  NOTIFICATION_TIMERS[match.id] = timerId;
-
-  // Store in localStorage so we can re-schedule on page reload
-  const schedule = getStoredNotificationSchedule();
-  schedule[match.id] = match.date;
-  setStoredNotificationSchedule(schedule);
+  sendToSW({
+    type: 'SCHEDULE_NOTIFICATION',
+    matchId: match.id,
+    matchDate: match.date,
+    teamAName: match.teamA.name,
+    teamBName: match.teamB.name,
+    notifyAt,
+  });
 }
 
-/**
- * Cancel a scheduled notification for a match
- */
 export function cancelMatchNotification(matchId: string): void {
-  if (NOTIFICATION_TIMERS[matchId]) {
-    clearTimeout(NOTIFICATION_TIMERS[matchId]);
-    delete NOTIFICATION_TIMERS[matchId];
-  }
-
-  const schedule = getStoredNotificationSchedule();
-  delete schedule[matchId];
-  setStoredNotificationSchedule(schedule);
+  if (typeof window === 'undefined') return;
+  sendToSW({ type: 'CANCEL_NOTIFICATION', matchId });
 }
 
-/**
- * Show the actual notification
- */
-function showMatchNotification(match: Match): void {
-  if (typeof window === 'undefined' || !('Notification' in window)) return;
-  if (Notification.permission !== 'granted') return;
-
-  const matchDate = new Date(match.date);
-  const timeStr = matchDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  const title = '⚽ Match Starting Soon!';
-  const body = `${match.teamA.name} vs ${match.teamB.name} kicks off at ${timeStr}`;
-
-  try {
-    // Play ringtone sound
-    playNotificationRing();
-
-    // Try service worker notification first (works in background)
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'SHOW_NOTIFICATION',
-        title,
-        body,
-        matchId: match.id,
-      });
-    } else {
-      // Fallback to regular notification
-      new Notification(title, {
-        body,
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        tag: `match-${match.id}`,
-        requireInteraction: true,
-        silent: false,
-      });
-    }
-  } catch (error) {
-    console.error('Failed to show notification:', error);
-    // Last resort: use regular Notification API
-    try {
-      new Notification(title, { body, tag: `match-${match.id}` });
-    } catch {
-      // Silent fail
-    }
-  }
-}
+// ─── Re-schedule on page load ────────────────────────────────────
 
 /**
- * Re-schedule all pending notifications on page load.
- * Call this when the app initializes.
+ * Re-send all upcoming match schedules to the Service Worker.
+ * Called once on app init so the SW always has the latest data.
  */
 export function rescheduleAllNotifications(matches: Match[]): void {
-  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (typeof window === 'undefined') return;
   if (Notification.permission !== 'granted') return;
 
-  const schedule = getStoredNotificationSchedule();
-  
-  // Clean up old entries and re-schedule active ones
-  const newSchedule: Record<string, string> = {};
-
-  Object.entries(schedule).forEach(([matchId, dateStr]) => {
-    const match = matches.find(m => m.id === matchId);
-    if (match && match.status === 'scheduled') {
-      const matchTime = new Date(match.date).getTime();
-      if (matchTime > Date.now()) {
-        scheduleMatchNotification(match);
-        newSchedule[matchId] = dateStr;
-      }
+  matches.forEach((match) => {
+    if (match.status === 'scheduled') {
+      scheduleMatchNotification(match);
     }
   });
 
-  setStoredNotificationSchedule(newSchedule);
+  // Also ask the SW to do an immediate check (in case any are already due)
+  sendToSW({ type: 'CHECK_NOTIFICATIONS' });
 }
 
-/**
- * Register the service worker for background notifications
- */
+// ─── Listen for SW messages (ringtone when tab is open) ──────────
+
+let swListenerRegistered = false;
+
+function registerSWMessageListener(): void {
+  if (swListenerRegistered || typeof window === 'undefined') return;
+  if (!('serviceWorker' in navigator)) return;
+
+  swListenerRegistered = true;
+
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data?.type === 'PLAY_NOTIFICATION_SOUND') {
+      playNotificationRing();
+    }
+  });
+}
+
+// ─── Service Worker registration ─────────────────────────────────
+
 export async function registerServiceWorker(): Promise<void> {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
 
   try {
-    await navigator.serviceWorker.register('/sw.js');
+    const registration = await navigator.serviceWorker.register('/sw.js', {
+      updateViaCache: 'none',
+    });
+
+    // Listen for messages from SW (e.g. play sound)
+    registerSWMessageListener();
+
+    // Register Periodic Background Sync if available (Chrome/Edge Android).
+    // This wakes the SW periodically so it can check & fire due notifications
+    // even when the tab is completely closed.
+    try {
+      const periodicSync = (registration as unknown as { periodicSync?: { register: (tag: string, opts: { minInterval: number }) => Promise<void> } }).periodicSync;
+      if (periodicSync) {
+        await periodicSync.register('check-match-notifications', {
+          minInterval: 15 * 60 * 1000, // 15 minutes
+        });
+      }
+    } catch {
+      // Periodic sync not available — the SW will still fire via
+      // other wake-up events (push, sync, navigation)
+    }
+
+    // Also register a one-time background sync as fallback
+    try {
+      if ('sync' in registration) {
+        await (registration as unknown as { sync: { register: (tag: string) => Promise<void> } }).sync.register('check-match-notifications');
+      }
+    } catch {
+      // Background sync not available
+    }
   } catch (error) {
     console.error('Service worker registration failed:', error);
   }
