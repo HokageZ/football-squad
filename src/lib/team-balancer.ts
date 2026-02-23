@@ -363,9 +363,6 @@ export function detectBestPosition(stats: PlayerStats): PlayerPosition {
   if (stats.goalkeeping >= 70) {
     return 'GK';
   }
-  if (stats.defending >= 85 && stats.pace <= 55) {
-    return 'GK';
-  }
   
   return bestPos;
 }
