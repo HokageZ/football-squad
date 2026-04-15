@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Football Squad Builder
 
-## Getting Started
+A modern web application built with Next.js for managing football players, analyzing stats, and building balanced teams. 
 
-First, run the development server:
+## 🌟 Features
+
+- **Player Management:** Add, edit, and view football players with detailed attributes.
+- **Visual Stats:** Interactive radar charts and stat bars to analyze player performance and traits.
+- **Team Builder:** Intuitive drag-and-drop interface for building custom squads and visualizing formations directly on the pitch.
+- **Team Balancing:** Algorithmic team balancer to automatically sort players into fair teams for matches.
+- **Modern UI:** Beautiful, responsive design powered by Tailwind CSS v4, Radix UI primitives, and Framer Motion for smooth animations.
+- **Rich Feedback:** Interactive audio feedback and toast notifications for an engaging user experience.
+- **PWA Support:** Progressive Web App ready with service worker and manifest for native-like installation.
+
+## 🚀 Tech Stack
+
+- **Framework:** [Next.js 16](https://nextjs.org/) (App Router)
+- **Language:** [TypeScript](https://www.typescriptlang.org/)
+- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
+- **UI Components:** [Radix UI](https://www.radix-ui.com/) (Headless UI)
+- **Animations:** [Framer Motion](https://www.framer.com/motion/)
+- **Drag & Drop:** [@dnd-kit](https://dndkit.com/)
+- **Data Visualization:** [Recharts](https://recharts.org/)
+- **Icons:** [Lucide React](https://lucide.dev/)
+- **Notifications:** [Sonner](https://sonner.emilkowal.ski/)
+
+## 📦 Getting Started
+
+First, install the dependencies (the project uses `pnpm`):
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+```
+
+Then, run the development server:
+
+```bash
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📂 Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `/src/app` - Next.js App Router pages (`/`, `/teams`, `/players`, `/matches`)
+- `/src/components` - React components organized by domain:
+  - `/ui` - Reusable foundational UI elements
+  - `/players` - Player-specific views (cards, forms, stats)
+  - `/teams` - Squad building and pitch view components
+  - `/layout` - Global layout wrappers and background effects
+- `/src/context` - React Context providers for state management (`PlayerContext`, `MatchContext`)
+- `/src/lib` - Core utilities, types, local storage, and the team balancing logic
+- `/public` - Static assets including SVGs, background images, and PWA configurations
 
-## Learn More
+## 🛠️ Building for Production
 
-To learn more about Next.js, take a look at the following resources:
+To create an optimized production build:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Then start the production server:
 
-## Deploy on Vercel
+```bash
+pnpm start
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📝 License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is private and created for managing local football squads.
