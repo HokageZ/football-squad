@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -45,8 +46,9 @@ export default function PlayersPage() {
     image?: string;
     isUnknown?: boolean;
     position?: PlayerPosition;
+    tags?: string[];
   }) => {
-    addPlayer(data.name, data.stats, data.image, data.isUnknown, data.position);
+    addPlayer(data.name, data.stats, data.image, data.isUnknown, data.position, data.tags);
     setIsAddDialogOpen(false);
   };
 
@@ -56,6 +58,7 @@ export default function PlayersPage() {
     image?: string;
     isUnknown?: boolean;
     position?: PlayerPosition;
+    tags?: string[];
   }) => {
     if (editingPlayer) {
       updatePlayer(editingPlayer.id, data);
@@ -206,6 +209,11 @@ export default function PlayersPage() {
                 </>
               )}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              {editingPlayer
+                ? `Edit details for ${editingPlayer.name}`
+                : 'Create a new player profile with name, position, skills and tags.'}
+            </DialogDescription>
             {editingPlayer && (
               <p className="text-xs text-muted-foreground font-medium mt-1">
                 Updating {editingPlayer.name}

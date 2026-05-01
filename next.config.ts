@@ -12,6 +12,9 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  // Silence "webpack config with Turbopack" warning — Serwist registers a
+  // webpack hook even when disabled. Empty turbopack config opts in explicitly.
+  turbopack: {},
 };
 
 export default withSerwist(nextConfig);

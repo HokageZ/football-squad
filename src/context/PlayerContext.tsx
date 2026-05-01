@@ -15,7 +15,7 @@ import { getStoredPlayers, setStoredPlayers, generateId } from '@/lib/storage';
 interface PlayerContextType {
   players: Player[];
   isLoading: boolean;
-  addPlayer: (name: string, stats?: PlayerStats, image?: string, isUnknown?: boolean, position?: PlayerPosition) => Player;
+  addPlayer: (name: string, stats?: PlayerStats, image?: string, isUnknown?: boolean, position?: PlayerPosition, tags?: string[]) => Player;
   updatePlayer: (
     id: string,
     updates: Partial<Omit<Player, 'id' | 'createdAt'>>
@@ -75,7 +75,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [players, isLoading]);
 
   const addPlayer = useCallback(
-    (name: string, stats?: PlayerStats, image?: string, isUnknown?: boolean, position?: PlayerPosition): Player => {
+    (name: string, stats?: PlayerStats, image?: string, isUnknown?: boolean, position?: PlayerPosition, tags?: string[]): Player => {
       const newPlayer: Player = {
         id: generateId(),
         name,
@@ -83,6 +83,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         position,
         stats: stats || DEFAULT_STATS,
         isUnknown,
+        tags,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };

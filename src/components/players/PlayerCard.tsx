@@ -14,59 +14,73 @@ import { Player, STAT_KEYS, OUTFIELD_STAT_KEYS, STAT_LABELS, POSITION_COLORS } f
 import { calculateOverall, calculatePositionOverall, getPlayerOverall } from '@/lib/team-balancer';
 import { StatRadar } from './StatRadar';
 
-function getPlayerType(player: Player): { label: string; color: string } {
-  const s = player.stats;
-  if (player.isUnknown) return { label: 'Unknown', color: 'text-muted-foreground' };
+type Archetype = { label: string; color: string };
 
-  // Position-specific archetypes
+function getPlayerArchetypes(player: Player): Archetype[] {
+  const s = player.stats;
+  if (player.isUnknown) return [{ label: 'Unknown', color: 'text-muted-foreground' }];
+
+  const out: Archetype[] = [];
+  const seen = new Set<string>();
+  const push = (a: Archetype) => {
+    if (seen.has(a.label)) return;
+    seen.add(a.label);
+    out.push(a);
+  };
+
+  // Position-specific archetypes — push all that match
   if (player.position === 'GK') {
-    if (s.goalkeeping >= 85 && s.pace >= 70) return { label: 'Sweeper Keeper', color: 'text-cyan-400' };
-    if (s.goalkeeping >= 85 && s.physical >= 75) return { label: 'Commander', color: 'text-amber-400' };
-    if (s.goalkeeping >= 80 && s.passing >= 70) return { label: 'Distributor', color: 'text-blue-400' };
-    if (s.goalkeeping >= 75) return { label: 'Shot Stopper', color: 'text-yellow-400' };
-    if (s.goalkeeping >= 60) return { label: 'Keeper', color: 'text-muted-foreground' };
+    if (s.goalkeeping >= 85 && s.pace >= 70) push({ label: 'Sweeper Keeper', color: 'text-cyan-400' });
+    if (s.goalkeeping >= 85 && s.physical >= 75) push({ label: 'Commander', color: 'text-amber-400' });
+    if (s.goalkeeping >= 80 && s.passing >= 70) push({ label: 'Distributor', color: 'text-blue-400' });
+    if (s.goalkeeping >= 75) push({ label: 'Shot Stopper', color: 'text-yellow-400' });
+    if (s.goalkeeping >= 60 && out.length === 0) push({ label: 'Keeper', color: 'text-muted-foreground' });
   }
 
   if (player.position === 'DEF') {
-    if (s.defending >= 80 && s.pace >= 75) return { label: 'Sweeper', color: 'text-cyan-400' };
-    if (s.defending >= 80 && s.physical >= 80) return { label: 'Stopper', color: 'text-orange-400' };
-    if (s.defending >= 75 && s.passing >= 75) return { label: 'Ball Player', color: 'text-blue-400' };
-    if (s.defending >= 80 && s.dribbling >= 70) return { label: 'Modern Defender', color: 'text-emerald-400' };
-    if (s.defending >= 75) return { label: 'Rock', color: 'text-indigo-400' };
+    if (s.defending >= 80 && s.pace >= 75) push({ label: 'Sweeper', color: 'text-cyan-400' });
+    if (s.defending >= 80 && s.physical >= 80) push({ label: 'Stopper', color: 'text-orange-400' });
+    if (s.defending >= 75 && s.passing >= 75) push({ label: 'Ball Player', color: 'text-blue-400' });
+    if (s.defending >= 80 && s.dribbling >= 70) push({ label: 'Modern Defender', color: 'text-emerald-400' });
+    if (s.defending >= 75 && out.length === 0) push({ label: 'Rock', color: 'text-indigo-400' });
   }
 
   if (player.position === 'MID') {
-    if (s.passing >= 80 && s.defending >= 70) return { label: 'Deep Playmaker', color: 'text-purple-400' };
-    if (s.passing >= 80 && s.dribbling >= 75) return { label: 'Maestro', color: 'text-yellow-400' };
-    if (s.physical >= 75 && s.defending >= 70 && s.pace >= 70) return { label: 'Box-to-Box', color: 'text-orange-400' };
-    if (s.shooting >= 75 && s.dribbling >= 75) return { label: 'Attacking Mid', color: 'text-red-400' };
-    if (s.pace >= 80 && s.dribbling >= 75) return { label: 'Engine', color: 'text-emerald-400' };
+    if (s.passing >= 80 && s.defending >= 70) push({ label: 'Deep Playmaker', color: 'text-purple-400' });
+    if (s.passing >= 80 && s.dribbling >= 75) push({ label: 'Maestro', color: 'text-yellow-400' });
+    if (s.physical >= 75 && s.defending >= 70 && s.pace >= 70) push({ label: 'Box-to-Box', color: 'text-orange-400' });
+    if (s.shooting >= 75 && s.dribbling >= 75) push({ label: 'Attacking Mid', color: 'text-red-400' });
+    if (s.pace >= 80 && s.dribbling >= 75) push({ label: 'Engine', color: 'text-emerald-400' });
   }
 
   if (player.position === 'ATT') {
-    if (s.shooting >= 85 && s.pace >= 80) return { label: 'Poacher', color: 'text-red-400' };
-    if (s.physical >= 80 && s.shooting >= 75) return { label: 'Target Man', color: 'text-orange-400' };
-    if (s.dribbling >= 80 && s.passing >= 75) return { label: 'False 9', color: 'text-purple-400' };
-    if (s.pace >= 85 && s.dribbling >= 80) return { label: 'Winger', color: 'text-emerald-400' };
-    if (s.shooting >= 80) return { label: 'Fox in the Box', color: 'text-yellow-400' };
-    if (s.pace >= 85) return { label: 'Speedster', color: 'text-cyan-400' };
+    if (s.shooting >= 85 && s.pace >= 80) push({ label: 'Poacher', color: 'text-red-400' });
+    if (s.physical >= 80 && s.shooting >= 75) push({ label: 'Target Man', color: 'text-orange-400' });
+    if (s.dribbling >= 80 && s.passing >= 75) push({ label: 'False 9', color: 'text-purple-400' });
+    if (s.pace >= 85 && s.dribbling >= 80) push({ label: 'Winger', color: 'text-emerald-400' });
+    if (s.shooting >= 80) push({ label: 'Fox in the Box', color: 'text-yellow-400' });
+    if (s.pace >= 85) push({ label: 'Speedster', color: 'text-cyan-400' });
   }
 
-  // Generic archetypes (no position or no match above)
-  if (s.pace >= 80 && s.shooting >= 75 && s.dribbling >= 75) return { label: 'Speedster', color: 'text-cyan-400' };
-  if (s.shooting >= 80 && s.passing >= 70) return { label: 'Playmaker', color: 'text-purple-400' };
-  if (s.defending >= 80 && s.physical >= 75) return { label: 'Wall', color: 'text-blue-400' };
-  if (s.pace >= 80 && s.dribbling >= 80) return { label: 'Winger', color: 'text-emerald-400' };
-  if (s.shooting >= 85) return { label: 'Sniper', color: 'text-red-400' };
-  if (s.passing >= 80) return { label: 'Maestro', color: 'text-yellow-400' };
-  if (s.physical >= 80) return { label: 'Tank', color: 'text-orange-400' };
-  if (s.defending >= 80) return { label: 'Anchor', color: 'text-indigo-400' };
-  if (s.dribbling >= 80) return { label: 'Technician', color: 'text-pink-400' };
-  
-  const overall = calculateOverall(s);
-  if (overall >= 80) return { label: 'Complete', color: 'text-primary' };
-  if (overall >= 65) return { label: 'Balanced', color: 'text-muted-foreground' };
-  return { label: 'Prospect', color: 'text-muted-foreground' };
+  // Generic stat-based archetypes (always evaluated, deduped above)
+  if (s.pace >= 80 && s.shooting >= 75 && s.dribbling >= 75) push({ label: 'Speedster', color: 'text-cyan-400' });
+  if (s.shooting >= 80 && s.passing >= 70) push({ label: 'Playmaker', color: 'text-purple-400' });
+  if (s.defending >= 80 && s.physical >= 75) push({ label: 'Wall', color: 'text-blue-400' });
+  if (s.pace >= 80 && s.dribbling >= 80) push({ label: 'Winger', color: 'text-emerald-400' });
+  if (s.shooting >= 85) push({ label: 'Sniper', color: 'text-red-400' });
+  if (s.passing >= 80) push({ label: 'Maestro', color: 'text-yellow-400' });
+  if (s.physical >= 80) push({ label: 'Tank', color: 'text-orange-400' });
+  if (s.defending >= 80) push({ label: 'Anchor', color: 'text-indigo-400' });
+  if (s.dribbling >= 80) push({ label: 'Technician', color: 'text-pink-400' });
+
+  if (out.length === 0) {
+    const overall = calculateOverall(s);
+    if (overall >= 80) push({ label: 'Complete', color: 'text-primary' });
+    else if (overall >= 65) push({ label: 'Balanced', color: 'text-muted-foreground' });
+    else push({ label: 'Prospect', color: 'text-muted-foreground' });
+  }
+
+  return out;
 }
 
 function getStatColor(value: number): string {
@@ -91,7 +105,9 @@ export function PlayerCard({
   compact = false,
 }: PlayerCardProps) {
   const overall = getPlayerOverall(player);
-  const playerType = getPlayerType(player);
+  const archetypes = getPlayerArchetypes(player);
+  const primaryArchetype = archetypes[0];
+  const userTags = player.tags ?? [];
   const posOverall = player.position ? calculatePositionOverall(player.stats, player.position) : null;
   const baseOverall = calculateOverall(player.stats);
 
@@ -145,11 +161,28 @@ export function PlayerCard({
                     <span>PAC <span className={`font-mono ${getStatColor(player.stats.pace)}`}>{player.stats.pace}</span></span>
                     <span>SHO <span className={`font-mono ${getStatColor(player.stats.shooting)}`}>{player.stats.shooting}</span></span>
                     <span>PAS <span className={`font-mono ${getStatColor(player.stats.passing)}`}>{player.stats.passing}</span></span>
-                    <span className={`ml-1 ${playerType.color}`}>{playerType.label}</span>
+                    <span className={`ml-1 ${primaryArchetype.color}`}>{primaryArchetype.label}</span>
                   </>
                 )}
               </div>
             </div>
+            {userTags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {userTags.slice(0, 3).map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary"
+                  >
+                    {tag}
+                  </span>
+                ))}
+                {userTags.length > 3 && (
+                  <span className="text-[9px] font-bold text-muted-foreground/70">
+                    +{userTags.length - 3}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className={`text-2xl font-black italic ${getOverallColor(overall)}`}>
             {player.isUnknown ? '??' : overall}
@@ -233,9 +266,18 @@ export function PlayerCard({
                   {player.position}
                 </span>
               )}
-              {!player.isUnknown && (
-                <span className={`text-[10px] font-bold ${playerType.color} bg-white/5 px-1.5 py-0.5 rounded`}>
-                  {playerType.label}
+              {!player.isUnknown &&
+                archetypes.slice(0, 3).map((a) => (
+                  <span
+                    key={a.label}
+                    className={`text-[10px] font-bold ${a.color} bg-white/5 px-1.5 py-0.5 rounded`}
+                  >
+                    {a.label}
+                  </span>
+                ))}
+              {archetypes.length > 3 && !player.isUnknown && (
+                <span className="text-[10px] font-bold text-muted-foreground/70 px-1.5 py-0.5">
+                  +{archetypes.length - 3}
                 </span>
               )}
             </div>
@@ -247,6 +289,25 @@ export function PlayerCard({
               </div>
             )}
             <div className={`h-1 w-12 mx-auto mt-2 opacity-50 ${player.isUnknown ? 'bg-white/20' : 'bg-gradient-to-r from-transparent via-primary to-transparent'}`} />
+
+            {/* User-defined tags */}
+            {userTags.length > 0 && (
+              <div className="flex flex-wrap justify-center gap-1 mt-2.5">
+                {userTags.slice(0, 4).map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary"
+                  >
+                    {tag}
+                  </span>
+                ))}
+                {userTags.length > 4 && (
+                  <span className="text-[9px] font-bold text-muted-foreground/70 px-1">
+                    +{userTags.length - 4}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Stats Section */}

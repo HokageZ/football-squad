@@ -33,9 +33,25 @@ export interface Player {
   position?: PlayerPosition;
   stats: PlayerStats;
   isUnknown?: boolean;
+  /** User-defined custom tags (e.g. "Captain", "Lefty") */
+  tags?: string[];
   createdAt: string;
   updatedAt: string;
 }
+
+/** Suggested tags shown as quick-add chips in the player form */
+export const SUGGESTED_TAGS: string[] = [
+  'Captain',
+  'Vice Captain',
+  'Speedster',
+  'Lefty',
+  'Free Kick',
+  'Header',
+  'Veteran',
+  'Rookie',
+  'Reliable',
+  'Wildcard',
+];
 
 export interface Team {
   id: string;
