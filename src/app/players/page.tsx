@@ -82,47 +82,28 @@ export default function PlayersPage() {
 
   return (
     <div className="space-y-8 pb-10">
-      {/* Hero — Doppelrand */}
-      <div className="relative p-1.5 rounded-[2rem] bg-white/[0.03] border border-white/8 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)]">
-        <div className="relative overflow-hidden rounded-[calc(2rem-0.375rem)] border border-white/5 bg-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-          <div className="absolute inset-0 bg-[url('/pitch-pattern.svg')] opacity-[0.04]" aria-hidden />
-          <div
-            className="absolute inset-0"
-            aria-hidden
-            style={{
-              backgroundImage:
-                'radial-gradient(circle at 85% 100%, rgba(16,185,129,0.18), transparent 55%)',
-            }}
-          />
+      {/* Header Section */}
+      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+        <div
+          className="space-y-2"
+        >
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight">
+            SQUAD <span className="text-primary">ROSTER</span>
+          </h1>
+          <p className="text-muted-foreground font-medium max-w-md">
+            Manage your elite athletes, track their development, and scout for new talent.
+          </p>
+        </div>
 
-          <div className="relative p-6 sm:p-10 md:p-14 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div className="max-w-xl">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/25 text-primary text-[10px] font-bold tracking-[0.25em] uppercase mb-5">
-                <Users className="h-3 w-3" />
-                Squad Roster
-              </div>
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter leading-[0.9] mb-4">
-                THE
-                <br />
-                <span className="text-primary">ROSTER.</span>
-              </h1>
-              <p className="text-muted-foreground text-sm sm:text-base font-medium max-w-md leading-relaxed">
-                Track stats, tag archetypes, and recruit new talent. Every player has a story.
-              </p>
-            </div>
-
-            <Button
-              onClick={() => setIsAddDialogOpen(true)}
-              size="lg"
-              className="group rounded-full font-bold pl-6 pr-2 py-1 h-12 shadow-lg shadow-primary/20 shrink-0"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Recruit player
-              <span className="ml-3 inline-flex items-center justify-center w-9 h-9 rounded-full bg-black/20 transition-transform group-hover:translate-x-0.5">
-                <Plus className="h-4 w-4" />
-              </span>
-            </Button>
-          </div>
+        <div>
+          <Button
+            onClick={() => setIsAddDialogOpen(true)}
+            size="lg"
+            className="rounded-full font-bold shadow-lg hover:shadow-xl transition-shadow"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            Recruit Player
+          </Button>
         </div>
       </div>
 

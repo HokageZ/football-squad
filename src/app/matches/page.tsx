@@ -103,78 +103,64 @@ export default function MatchesPage() {
 
   return (
     <div className="space-y-8 pb-10">
-      {/* Hero — Doppelrand */}
-      <div className="relative p-1.5 rounded-[2rem] bg-white/[0.03] border border-white/8 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)]">
-        <div className="relative overflow-hidden rounded-[calc(2rem-0.375rem)] border border-white/5 bg-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-          <div className="absolute inset-0 bg-[url('/pitch-pattern.svg')] opacity-[0.04]" aria-hidden />
-          <div
-            className="absolute inset-0"
-            aria-hidden
-            style={{
-              backgroundImage:
-                'radial-gradient(circle at 15% 100%, rgba(16,185,129,0.18), transparent 55%)',
-            }}
-          />
+      {/* Header Section */}
+      <div
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-900/20 to-teal-900/20 border border-white/10 p-8 sm:p-12"
+      >
+        <div className="absolute inset-0 bg-[url('/pitch-pattern.svg')] opacity-5" />
+        <div className="absolute -right-20 -top-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
 
-          <div className="relative p-6 sm:p-10 md:p-14 max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/25 text-primary text-[10px] font-bold tracking-[0.25em] uppercase mb-5">
-              <Medal className="h-3 w-3" />
-              Match Center
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter leading-[0.9] mb-4">
-              MATCH
-              <br />
-              <span className="text-primary">HISTORY.</span>
-            </h1>
-            <p className="text-muted-foreground text-sm sm:text-base md:text-lg font-medium max-w-md leading-relaxed">
-              Log scores, track form, and get push alerts an hour before every kick-off.
-            </p>
+        <div className="relative z-10 max-w-2xl">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-primary text-xs font-bold tracking-widest uppercase mb-4">
+            <Medal className="h-3 w-3 fill-current" />
+            Match Center
           </div>
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tighter mb-4">
+            MATCH <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-400">HISTORY</span>
+          </h1>
+          <p className="text-muted-foreground text-lg font-medium max-w-lg">
+            Review past performances, analyze results, and track your squad's journey to glory.
+          </p>
         </div>
       </div>
 
       {/* Notification Banner */}
-      {notificationPermission !== 'granted' && notificationPermission !== 'unsupported' && matches.some((m) => m.status === 'scheduled') && (
-        <div className="relative flex items-center gap-3 p-3.5 rounded-2xl bg-primary/[0.06] border border-primary/25">
-          <div className="shrink-0 w-9 h-9 rounded-lg bg-primary/15 text-primary flex items-center justify-center">
-            <Bell className="h-4 w-4" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold">Enable match alerts</p>
-            <p className="text-[11px] text-muted-foreground/80 font-medium truncate">
-              Push notification 1h before every kick-off
-            </p>
+      {notificationPermission !== 'granted' && notificationPermission !== 'unsupported' && matches.some(m => m.status === 'scheduled') && (
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-primary/5 border border-primary/20">
+          <Bell className="h-5 w-5 text-primary shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-bold">Get notified before matches</p>
+            <p className="text-xs text-muted-foreground">Receive a push notification 1 hour before kick-off</p>
           </div>
           <Button
             size="sm"
             onClick={requestNotifications}
-            className="shrink-0 rounded-full h-9 px-4 font-bold text-xs uppercase tracking-wider"
+            className="shrink-0 font-bold"
           >
+            <Bell className="h-3 w-3 mr-1.5" />
             Enable
           </Button>
         </div>
       )}
 
-      {notificationPermission === 'granted' && matches.some((m) => m.status === 'scheduled') && (
-        <div className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-emerald-500/[0.08] border border-emerald-500/20 w-fit">
-          <Bell className="h-3 w-3 text-emerald-400" />
-          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">
-            Alerts armed · 1h before kick-off
-          </span>
+      {notificationPermission === 'granted' && matches.some(m => m.status === 'scheduled') && (
+        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+          <Bell className="h-4 w-4 text-emerald-400" />
+          <span className="text-xs font-bold text-emerald-400">Notifications enabled — you'll be notified 1h before each match</span>
         </div>
       )}
 
       {matches.length === 0 ? (
-        <div className="relative p-1 rounded-[1.75rem] bg-white/[0.02] border border-dashed border-white/10">
-          <div className="p-14 text-center rounded-[calc(1.75rem-0.25rem)]">
-            <div className="w-14 h-14 mx-auto rounded-full bg-white/5 border border-white/8 flex items-center justify-center mb-5">
-              <Trophy className="h-6 w-6 text-muted-foreground" />
+        <div>
+          <Card className="p-16 text-center glass border-dashed border-white/10 bg-white/5">
+            <div className="w-20 h-20 mx-auto bg-white/5 rounded-full flex items-center justify-center mb-6">
+              <Trophy className="h-10 w-10 text-muted-foreground" />
             </div>
-            <h3 className="text-xl font-black mb-1.5 tracking-tight">No matches yet</h3>
-            <p className="text-xs text-muted-foreground/80 mb-0 max-w-[260px] mx-auto font-medium">
-              Head to the Team Builder to organize your first fixture.
+            <h3 className="text-2xl font-black mb-2 tracking-tight">No Matches Recorded</h3>
+            <p className="text-muted-foreground mb-8 max-w-xs mx-auto">
+              Head over to the Team Builder to organize your first match.
             </p>
-          </div>
+          </Card>
         </div>
       ) : (
         <motion.div
